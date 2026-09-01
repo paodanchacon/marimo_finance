@@ -1,8 +1,17 @@
 # Bitácora
 
-## 2026-09-01 — Tema 1: mejoras de visualización en herramienta 2
+## 2026-09-01 — Tema 1: herramienta 2 (mejoras) y herramienta 3 completa
 
 - Subí el repo a GitHub: https://github.com/paodanchacon/marimo_finance
+- Herramienta 3 (amortización de hipoteca): escribí `cuota_francesa`,
+  `cuota_americana`, `tabla_amortizacion_francesa` y
+  `tabla_amortizacion_americana` en `formulas.py`, verificadas contra el
+  ejemplo del PDF (200.000€, 30 años, 3% → cuota 843.21€, exacto).
+- Notebook: teoría + sliders (capital, tasa, plazo) + gráfico comparando
+  francés (área apilada interés/capital) vs. americano (interés mensual y
+  saldo pendiente en ejes separados, tras corregir un problema de escala:
+  el interés mensual quedaba invisible al lado del pago final de 200.000€).
+- Conclusión: compara intereses totales pagados en cada sistema.
 - Herramienta 2a: cambié el gráfico de barras por frecuencia a una curva
   (eje X logarítmico, ya que las frecuencias van de 1 a 365) con los 5
   puntos estándar marcados y una línea de referencia con el límite de

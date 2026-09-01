@@ -96,7 +96,7 @@ en el explorador de archivos.
 
 | # | Tema | Estado |
 |---|---|---|
-| 1 | Conceptos teóricos esenciales | 🔄 (2/6 herramientas núcleo) |
+| 1 | Conceptos teóricos esenciales | 🔄 (3/6 herramientas núcleo) |
 | 2 | Finanzas personales y gestión del riesgo | 🔲 |
 | 3 | Inversión inmobiliaria | 🔲 |
 | 4 | Análisis geopolítico para la inversión | 🔲 |
@@ -160,8 +160,8 @@ Ninguna necesita tabla SQL — son todas calculadoras paramétricas.
 | 1 | Interés simple vs. compuesto | Crecimiento lineal vs. exponencial del capital | `interes_simple`, `interes_compuesto` | ✅ Implementada |
 | 2a | TIN vs. TAE — efecto capitalización | Por qué compuestos más frecuentes elevan la TAE aunque el TIN no cambie | `tin_a_tae` | ✅ Implementada |
 | 2b | TIN vs. TAE — comparador de 2 ofertas | Por qué una comisión de apertura puede hacer más caro un préstamo con TIN más bajo | `tae_con_comision` | ✅ Implementada |
-| 3 | Amortización de hipoteca: francés vs. americano | Composición de la cuota (interés vs. capital) y la decisión "amortizar vs. invertir" | `cuota_francesa`, tabla de amortización | 🔲 Pendiente (siguiente) |
-| 4 | Rentabilidad neta real | Cómo inflación e impuestos erosionan la rentabilidad nominal (fórmula de Fisher, no la resta simple) | `tasa_real` | 🔲 Pendiente |
+| 3 | Amortización de hipoteca: francés vs. americano | Composición de la cuota (interés vs. capital) y la decisión "amortizar vs. invertir" | `cuota_francesa`, `cuota_americana`, `tabla_amortizacion_francesa`, `tabla_amortizacion_americana` | ✅ Implementada |
+| 4 | Rentabilidad neta real | Cómo inflación e impuestos erosionan la rentabilidad nominal (fórmula de Fisher, no la resta simple) | `tasa_real` | 🔲 Pendiente (siguiente) |
 | 5 | Panel ROI / ROE / ROA / CAGR | Comparar de un vistazo distintos medidores de rentabilidad sobre el mismo caso | `roi`, `roe`, `roa`, `cagr` | 🔲 Pendiente |
 | 6 | VAN y TIR | Decidir si un proyecto/inversión es viable dado un flujo de caja y una tasa de descuento | `van`, `tir` (requiere solver numérico) | 🔲 Pendiente |
 
@@ -202,10 +202,11 @@ o definiciones — no ganan nada con sliders.
 
 ## 11. Estado actual
 
-Entorno del proyecto creado con `uv` (marimo, numpy, pandas, plotly) y repo
-git inicializado (sin commits todavía). Tema 1 en curso: `src/formulas.py`
-tiene `interes_simple`, `interes_compuesto`, `tin_a_tae` y `tae_con_comision`;
-`notebooks/01_conceptos_teoricos.py` tiene las herramientas 1, 2a y 2b
-funcionando y validadas (ver detalle en 9.1). Siguiente paso: herramienta 3
-(amortización de hipoteca, francés vs. americano). Todavía sin cierre de
-sesión (sin commit ni entrada en `docs/log.md`).
+Repo en GitHub: https://github.com/paodanchacon/marimo_finance. Tema 1 en
+curso, 3/6 herramientas núcleo listas y validadas (ver detalle en 9.1):
+interés simple vs. compuesto, TIN vs. TAE (2a y 2b), y amortización de
+hipoteca francés vs. americano. `src/formulas.py` tiene `interes_simple`,
+`interes_compuesto`, `tin_a_tae`, `tae_con_comision`, `cuota_francesa`,
+`cuota_americana`, `tabla_amortizacion_francesa` y
+`tabla_amortizacion_americana`. Siguiente paso: herramienta 4, rentabilidad
+neta real (inflación + impuestos, fórmula de Fisher).

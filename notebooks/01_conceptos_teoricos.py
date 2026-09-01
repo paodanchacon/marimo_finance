@@ -14,15 +14,26 @@ def _():
     import marimo as mo
     import numpy as np
     import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
 
-    from src.formulas import interes_compuesto, interes_simple, tae_con_comision, tin_a_tae
+    from src.formulas import (
+        interes_compuesto,
+        interes_simple,
+        tabla_amortizacion_americana,
+        tabla_amortizacion_francesa,
+        tae_con_comision,
+        tin_a_tae,
+    )
 
     return (
         go,
         interes_compuesto,
         interes_simple,
+        make_subplots,
         mo,
         np,
+        tabla_amortizacion_americana,
+        tabla_amortizacion_francesa,
         tae_con_comision,
         tin_a_tae,
     )
@@ -351,6 +362,176 @@ def _(go, tae_a, tae_b, tin_a_slider, tin_b_slider):
         barmode="group",
     )
     fig_comparador
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Amortización de hipoteca: sistema francés vs. americano
+
+    **Sistema francés (cuota constante)**
+    Es el más común en préstamos hipotecarios y de consumo. La cuota que pagás cada
+    período es siempre la misma, pero la composición interna cambia con el tiempo:
+
+    - Al principio, la mayor parte de la cuota son intereses, y una parte pequeña es
+      amortización de capital.
+    - Con el paso del tiempo, esa proporción se invierte: cada vez pagás menos
+      intereses y más capital.
+
+    Esto pasa porque los intereses se calculan sobre el saldo pendiente, que al
+    principio es alto (casi todo el préstamo) y va bajando lentamente.
+
+    **Sistema americano (bullet o interest-only)**
+    Acá durante toda la vida del préstamo pagás solo intereses, y el capital completo
+    se devuelve de una sola vez al final (a veces se arma un fondo de amortización
+    aparte para juntar esa plata). La cuota periódica es más baja que en el francés
+    (porque no incluye capital), pero al final tenés que afrontar un pago grande, o
+    haber ahorrado en paralelo para cubrirlo.
+
+    ## Fórmulas
+
+    Cuota francesa (constante):
+
+    $$Cuota = \frac{C \times i}{1 - (1 + i)^{-n}}$$
+
+    Cuota americana (solo interés, cada período):
+
+    $$Cuota = C \times i$$
+
+    Donde $C$ es el capital pendiente, $i$ la tasa periódica y $n$ el número de
+    períodos. En el francés, en cada período: interés $= saldo \times i$, capital
+    amortizado $=$ cuota $-$ interés, y el saldo se reduce en ese capital amortizado.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    capital_hipoteca_slider = mo.ui.number(
+        start=10_000, stop=1_000_000, step=5_000, value=200_000, label="Capital del préstamo (€)"
+    )
+    tasa_hipoteca_slider = mo.ui.slider(
+        start=0.01, stop=0.10, step=0.001, value=0.03, label="Tasa anual", show_value=True
+    )
+    plazo_hipoteca_slider = mo.ui.slider(
+        start=1, stop=40, step=1, value=30, label="Plazo (años)", show_value=True
+    )
+    mo.hstack([capital_hipoteca_slider, tasa_hipoteca_slider, plazo_hipoteca_slider])
+    return capital_hipoteca_slider, plazo_hipoteca_slider, tasa_hipoteca_slider
+
+
+@app.cell
+def _(
+    capital_hipoteca_slider,
+    plazo_hipoteca_slider,
+    tabla_amortizacion_americana,
+    tabla_amortizacion_francesa,
+    tasa_hipoteca_slider,
+):
+    tasa_mensual_hipoteca = tasa_hipoteca_slider.value / 12
+    periodos_hipoteca = plazo_hipoteca_slider.value * 12
+
+    tabla_frances = tabla_amortizacion_francesa(
+        capital_hipoteca_slider.value, tasa_mensual_hipoteca, periodos_hipoteca
+    )
+    tabla_americano = tabla_amortizacion_americana(
+        capital_hipoteca_slider.value, tasa_mensual_hipoteca, periodos_hipoteca
+    )
+    return tabla_americano, tabla_frances
+
+
+@app.cell
+def _(go, make_subplots, tabla_americano, tabla_frances):
+    fig_amortizacion = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("Sistema francés", "Sistema americano"),
+        specs=[[{}, {"secondary_y": True}]],
+    )
+    fig_amortizacion.add_trace(
+        go.Scatter(
+            x=tabla_frances["periodo"],
+            y=tabla_frances["interes"],
+            mode="lines",
+            name="Interés (francés)",
+            stackgroup="frances",
+            line=dict(color="indianred"),
+        ),
+        row=1,
+        col=1,
+    )
+    fig_amortizacion.add_trace(
+        go.Scatter(
+            x=tabla_frances["periodo"],
+            y=tabla_frances["capital"],
+            mode="lines",
+            name="Capital (francés)",
+            stackgroup="frances",
+            line=dict(color="seagreen"),
+        ),
+        row=1,
+        col=1,
+    )
+    # El interés mensual (~cientos de €) y el pago final del capital (el préstamo
+    # completo) están en escalas tan distintas que apilarlos los vuelve ilegibles;
+    # por eso van en dos ejes Y separados en vez de un área apilada.
+    fig_amortizacion.add_trace(
+        go.Scatter(
+            x=tabla_americano["periodo"],
+            y=tabla_americano["interes"],
+            mode="lines",
+            name="Interés mensual (americano)",
+            line=dict(color="indianred"),
+        ),
+        row=1,
+        col=2,
+        secondary_y=False,
+    )
+    fig_amortizacion.add_trace(
+        go.Scatter(
+            x=tabla_americano["periodo"],
+            y=tabla_americano["saldo"],
+            mode="lines",
+            name="Saldo pendiente (americano)",
+            line=dict(color="seagreen", dash="dot"),
+        ),
+        row=1,
+        col=2,
+        secondary_y=True,
+    )
+    fig_amortizacion.update_layout(title="Composición de la cuota: interés vs. capital, mes a mes")
+    fig_amortizacion.update_xaxes(title_text="Mes", row=1, col=1)
+    fig_amortizacion.update_xaxes(title_text="Mes", row=1, col=2)
+    fig_amortizacion.update_yaxes(title_text="€", row=1, col=1)
+    fig_amortizacion.update_yaxes(title_text="Interés mensual (€)", row=1, col=2, secondary_y=False)
+    fig_amortizacion.update_yaxes(title_text="Saldo pendiente (€)", row=1, col=2, secondary_y=True)
+    fig_amortizacion
+    return
+
+
+@app.cell
+def _(mo, tabla_americano, tabla_frances):
+    cuota_frances_valor = tabla_frances["cuota"].iloc[0]
+    cuota_americana_valor = tabla_americano["interes"].iloc[0]
+    intereses_totales_frances = tabla_frances["interes"].sum()
+    intereses_totales_americano = tabla_americano["interes"].sum()
+
+    mo.md(
+        f"""
+        - Cuota mensual **sistema francés**: **{cuota_frances_valor:,.2f} €** (constante) →
+          intereses totales pagados: **{intereses_totales_frances:,.2f} €**
+        - Cuota mensual **sistema americano**: **{cuota_americana_valor:,.2f} €** (solo interés,
+          más el pago final del capital completo) → intereses totales pagados:
+          **{intereses_totales_americano:,.2f} €**
+
+        El sistema americano tiene cuotas mensuales más bajas, pero termina pagando
+        **{intereses_totales_americano - intereses_totales_frances:,.2f} €** más de intereses
+        en total, porque el capital nunca baja hasta el último pago.
+        """
+    )
     return
 
 
