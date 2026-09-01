@@ -1,5 +1,18 @@
 # Bitácora
 
+## 2026-09-01 — Tema 1: mejoras de visualización en herramienta 2
+
+- Subí el repo a GitHub: https://github.com/paodanchacon/marimo_finance
+- Herramienta 2a: cambié el gráfico de barras por frecuencia a una curva
+  (eje X logarítmico, ya que las frecuencias van de 1 a 365) con los 5
+  puntos estándar marcados y una línea de referencia con el límite de
+  capitalización continua (`e^TIN - 1`).
+- Herramienta 2b: agregué un gráfico de barras agrupadas (TIN vs. TAE real
+  por oferta) para ver de un vistazo cuánto infla cada comisión el costo
+  efectivo.
+- Próximo paso: herramienta 3, amortización de hipoteca (francés vs.
+  americano).
+
 ## 2026-08-31 — Tema 1: Conceptos teóricos esenciales
 
 - Armé `GUIA.md` con el plan del proyecto (estructura, stack, flujo por tema,

@@ -219,22 +219,46 @@ def _(frecuencia_dropdown, mo, tin_a_tae, tin_cap_slider):
 
 
 @app.cell
-def _(go, tin_a_tae, tin_cap_slider):
-    frecuencias_comparacion = {
+def _(go, np, tin_a_tae, tin_cap_slider):
+    frecuencias_estandar = {
         "Anual": 1,
         "Semestral": 2,
         "Trimestral": 4,
         "Mensual": 12,
         "Diaria": 365,
     }
-    taes_comparacion = [tin_a_tae(tin_cap_slider.value, f) for f in frecuencias_comparacion.values()]
 
-    fig_tae = go.Figure(go.Bar(x=list(frecuencias_comparacion.keys()), y=taes_comparacion))
+    m_continuo = np.logspace(0, np.log10(365), 200)
+    tae_curva = [tin_a_tae(tin_cap_slider.value, m) for m in m_continuo]
+    tae_limite = np.exp(tin_cap_slider.value) - 1
+
+    fig_tae = go.Figure()
+    fig_tae.add_trace(
+        go.Scatter(x=m_continuo, y=tae_curva, mode="lines", name="TAE según frecuencia")
+    )
+    fig_tae.add_trace(
+        go.Scatter(
+            x=list(frecuencias_estandar.values()),
+            y=[tin_a_tae(tin_cap_slider.value, f) for f in frecuencias_estandar.values()],
+            mode="markers+text",
+            text=list(frecuencias_estandar.keys()),
+            textposition="top center",
+            name="Frecuencias estándar",
+        )
+    )
+    fig_tae.add_hline(
+        y=tae_limite,
+        line_dash="dash",
+        annotation_text=f"Límite (capitalización continua): {tae_limite:.2%}",
+        annotation_position="bottom right",
+    )
     fig_tae.update_layout(
         title=f"TAE según frecuencia de capitalización (TIN = {tin_cap_slider.value:.1%})",
+        xaxis_title="Frecuencia de capitalización (veces al año)",
         yaxis_title="TAE",
         yaxis_tickformat=".1%",
     )
+    fig_tae.update_xaxes(type="log")
     fig_tae
     return
 
@@ -308,6 +332,25 @@ def _(
         **Conviene la oferta {mejor_oferta}** (menor coste real).
         """
     )
+    return tae_a, tae_b
+
+
+@app.cell
+def _(go, tae_a, tae_b, tin_a_slider, tin_b_slider):
+    fig_comparador = go.Figure()
+    fig_comparador.add_trace(
+        go.Bar(x=["Oferta A", "Oferta B"], y=[tin_a_slider.value, tin_b_slider.value], name="TIN")
+    )
+    fig_comparador.add_trace(
+        go.Bar(x=["Oferta A", "Oferta B"], y=[tae_a, tae_b], name="TAE real")
+    )
+    fig_comparador.update_layout(
+        title="TIN vs. TAE real por oferta",
+        yaxis_title="Tasa",
+        yaxis_tickformat=".1%",
+        barmode="group",
+    )
+    fig_comparador
     return
 
 
