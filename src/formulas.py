@@ -1,3 +1,4 @@
+import numpy_financial as npf
 import pandas as pd
 
 
@@ -87,3 +88,11 @@ def roa(beneficio_neto: float, activos_totales: float) -> float:
 
 def cagr(valor_inicial: float, valor_final: float, periodos: float) -> float:
     return (valor_final / valor_inicial) ** (1 / periodos) - 1
+
+
+def van(flujos: list[float], tasa_descuento: float) -> float:
+    return sum(flujo / (1 + tasa_descuento) ** t for t, flujo in enumerate(flujos))
+
+
+def tir(flujos: list[float]) -> float:
+    return npf.irr(flujos)

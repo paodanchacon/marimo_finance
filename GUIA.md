@@ -79,6 +79,7 @@ en el explorador de archivos.
 |---|---|---|
 | Notebook | **marimo** | Reactivo: cambiar un slider recalcula todo sin "run all". Ideal para explorar parámetros financieros. |
 | Cálculo | **numpy** | Vectorizar cálculos (ej. simular N escenarios de retorno). |
+| Cálculo financiero | **numpy_financial** | Funciones sin fórmula cerrada, como la TIR (se resuelve numéricamente). |
 | Datos | **pandas** | `pd.read_sql` para traer resultados de MySQL a los notebooks. |
 | Base de datos | **MySQL** | Una tabla por concepto/activo (gastos, ingresos, acciones, bonos, cripto, propiedades, etc.). |
 | Conexión DB | **SQLAlchemy** o **mysql-connector-python** | A definir (ver preguntas abiertas). |
@@ -96,7 +97,7 @@ en el explorador de archivos.
 
 | # | Tema | Estado |
 |---|---|---|
-| 1 | Conceptos teóricos esenciales | 🔄 (5/6 herramientas núcleo) |
+| 1 | Conceptos teóricos esenciales | 🔄 (6/6 núcleo ✅ — falta decidir Tier 2/3) |
 | 2 | Finanzas personales y gestión del riesgo | 🔲 |
 | 3 | Inversión inmobiliaria | 🔲 |
 | 4 | Análisis geopolítico para la inversión | 🔲 |
@@ -163,7 +164,7 @@ Ninguna necesita tabla SQL — son todas calculadoras paramétricas.
 | 3 | Amortización de hipoteca: francés vs. americano | Composición de la cuota (interés vs. capital) y la decisión "amortizar vs. invertir" | `cuota_francesa`, `cuota_americana`, `tabla_amortizacion_francesa`, `tabla_amortizacion_americana` | ✅ Implementada |
 | 4 | Rentabilidad neta real | Cómo inflación e impuestos erosionan la rentabilidad nominal (fórmula de Fisher, no la resta simple) | `tasa_real`, `rentabilidad_neta_real` | ✅ Implementada |
 | 5 | Panel ROI / ROE / ROA / CAGR | Comparar de un vistazo distintos medidores de rentabilidad sobre el mismo caso | `roi`, `roe`, `roa`, `cagr` | ✅ Implementada |
-| 6 | VAN y TIR | Decidir si un proyecto/inversión es viable dado un flujo de caja y una tasa de descuento | `van`, `tir` (requiere solver numérico) | 🔲 Pendiente (siguiente, última del Tier 1) |
+| 6 | VAN y TIR | Decidir si un proyecto/inversión es viable dado un flujo de caja y una tasa de descuento | `van`, `tir` (con `numpy_financial`) | ✅ Implementada |
 
 **Tier 2 — Complementarias (buen valor añadido, a definir si entran en esta ronda)**
 
@@ -202,14 +203,23 @@ o definiciones — no ganan nada con sliders.
 
 ## 11. Estado actual
 
-Repo en GitHub: https://github.com/paodanchacon/marimo_finance. Tema 1 en
-curso, 5/6 herramientas núcleo listas y validadas (ver detalle en 9.1):
-interés simple vs. compuesto, TIN vs. TAE (2a y 2b), amortización de
-hipoteca francés vs. americano, rentabilidad neta real (Fisher, con
-impuestos e inflación), y panel ROI/ROE/ROA/CAGR (5a: ROE vs. ROA con
-apalancamiento; 5b: ROI total vs. CAGR anualizado). `src/formulas.py` tiene
-`interes_simple`, `interes_compuesto`, `tin_a_tae`, `tae_con_comision`,
-`cuota_francesa`, `cuota_americana`, `tabla_amortizacion_francesa`,
-`tabla_amortizacion_americana`, `tasa_real`, `rentabilidad_neta_real`,
-`roi`, `roe`, `roa` y `cagr`. Siguiente paso: herramienta 6, VAN y TIR —
-la última del Tier 1 núcleo.
+Repo en GitHub: https://github.com/paodanchacon/marimo_finance. **Tier 1
+del Tema 1 completo: las 6 herramientas núcleo están implementadas y
+validadas** (ver detalle en 9.1) — interés simple vs. compuesto, TIN vs.
+TAE (2a y 2b), amortización de hipoteca francés vs. americano, rentabilidad
+neta real (Fisher), panel ROI/ROE/ROA/CAGR, y VAN y TIR. `src/formulas.py`
+tiene: `interes_simple`, `interes_compuesto`, `tin_a_tae`,
+`tae_con_comision`, `cuota_francesa`, `cuota_americana`,
+`tabla_amortizacion_francesa`, `tabla_amortizacion_americana`, `tasa_real`,
+`rentabilidad_neta_real`, `roi`, `roe`, `roa`, `cagr`, `van` y `tir`. Todo
+vive en un único notebook, `notebooks/01_conceptos_teoricos.py`.
+
+Nota: validando el ejemplo de VAN/TIR contra el PDF del curso, encontramos
+que la TIR que da el material (24.8%) está mal calculada — la TIR real de
+ese flujo de caja es 21.65% (verificado de forma independiente: el VAN da
+exactamente 0 en ese punto). Vale la pena tenerlo presente si se revisa ese
+ejemplo del PDF más adelante.
+
+Siguiente decisión: elegir si se arma el Tier 2 (CAPM, impacto del TER,
+apalancamiento) y/o Tier 3 (demos de opciones y bonos) para el Tema 1, o si
+se pasa directo al Tema 2 (Finanzas personales y gestión del riesgo).

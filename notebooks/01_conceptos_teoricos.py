@@ -28,6 +28,8 @@ def _():
         tabla_amortizacion_francesa,
         tae_con_comision,
         tin_a_tae,
+        tir,
+        van,
     )
 
     return (
@@ -46,6 +48,8 @@ def _():
         tabla_amortizacion_francesa,
         tae_con_comision,
         tin_a_tae,
+        tir,
+        van,
     )
 
 
@@ -845,6 +849,144 @@ def _(
                 """
             ),
         ]
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(
+        r"""
+        ---
+
+        # VAN y TIR
+
+        **VAN (Valor Actual Neto / NPV)**
+        Mide el valor, en dinero de hoy, de todos los flujos futuros de un proyecto o
+        inversión, descontados a una tasa que refleja el costo de oportunidad del dinero
+        (o el rendimiento mínimo exigido). Responde: "¿cuánto dinero de hoy me deja este
+        proyecto, ya descontado el paso del tiempo?"
+
+        **TIR (Tasa Interna de Retorno / IRR)**
+        Es la tasa de descuento que hace que el VAN sea exactamente igual a cero — la
+        rentabilidad "propia" del proyecto, expresada como porcentaje. Responde: "¿qué
+        tasa de rendimiento anual me está dando este proyecto en sí mismo?"
+
+        **Precaución práctica**: con flujos de caja irregulares (signos que cambian varias
+        veces), la TIR puede tener múltiples soluciones matemáticas o ser engañosa al
+        comparar proyectos de distinto tamaño o duración — en esos casos, el VAN es más
+        confiable como criterio de decisión, porque no tiene esas ambigüedades.
+
+        ## Fórmulas
+
+        $$VAN = \sum_{t=0}^{n} \frac{F_t}{(1+k)^t}$$
+
+        La TIR es la tasa $r$ tal que:
+
+        $$\sum_{t=0}^{n} \frac{F_t}{(1+r)^t} = 0$$
+
+        Donde $F_t$ es el flujo de caja en el período $t$ (el flujo $F_0$, la inversión
+        inicial, es negativo) y $k$ la tasa de descuento exigida. No hay fórmula
+        algebraica cerrada para la TIR — se encuentra numéricamente.
+        """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    inversion_slider = mo.ui.number(
+        start=1_000, stop=1_000_000, step=1_000, value=50_000, label="Inversión inicial (€)"
+    )
+    flujo1_slider = mo.ui.number(
+        start=-100_000, stop=500_000, step=1_000, value=20_000, label="Flujo año 1 (€)"
+    )
+    flujo2_slider = mo.ui.number(
+        start=-100_000, stop=500_000, step=1_000, value=25_000, label="Flujo año 2 (€)"
+    )
+    flujo3_slider = mo.ui.number(
+        start=-100_000, stop=500_000, step=1_000, value=30_000, label="Flujo año 3 (€)"
+    )
+    tasa_descuento_slider = mo.ui.slider(
+        start=0.0, stop=0.30, step=0.005, value=0.10, label="Tasa de descuento (k)", show_value=True
+    )
+    mo.vstack(
+        [
+            mo.hstack([inversion_slider, flujo1_slider, flujo2_slider, flujo3_slider]),
+            tasa_descuento_slider,
+        ]
+    )
+    return (
+        flujo1_slider,
+        flujo2_slider,
+        flujo3_slider,
+        inversion_slider,
+        tasa_descuento_slider,
+    )
+
+
+@app.cell
+def _(
+    flujo1_slider,
+    flujo2_slider,
+    flujo3_slider,
+    go,
+    inversion_slider,
+    np,
+    tasa_descuento_slider,
+    tir,
+    van,
+):
+    flujos = [-inversion_slider.value, flujo1_slider.value, flujo2_slider.value, flujo3_slider.value]
+    van_valor = van(flujos, tasa_descuento_slider.value)
+    tir_valor = tir(flujos)
+
+    limite_grafico = max(0.6, tasa_descuento_slider.value * 1.5, tir_valor * 1.5)
+    tasas_grafico = np.linspace(0.001, limite_grafico, 200)
+    van_curva = [van(flujos, r) for r in tasas_grafico]
+
+    fig_van = go.Figure()
+    fig_van.add_trace(go.Scatter(x=tasas_grafico, y=van_curva, mode="lines", name="VAN(tasa)"))
+    fig_van.add_trace(
+        go.Scatter(
+            x=[tasa_descuento_slider.value],
+            y=[van_valor],
+            mode="markers",
+            marker=dict(size=12, color="steelblue"),
+            name="Tu tasa elegida",
+        )
+    )
+    fig_van.add_hline(y=0, line_dash="dot", line_color="gray")
+    fig_van.add_vline(
+        x=tir_valor, line_dash="dash", annotation_text=f"TIR = {tir_valor:.2%}", annotation_position="top"
+    )
+    fig_van.update_layout(
+        title="Perfil del VAN según la tasa de descuento",
+        xaxis_title="Tasa de descuento",
+        yaxis_title="VAN (€)",
+        xaxis_tickformat=".0%",
+    )
+    fig_van
+    return tir_valor, van_valor
+
+
+@app.cell
+def _(mo, tasa_descuento_slider, tir_valor, van_valor):
+    decision_van = "se acepta" if van_valor > 0 else "se rechaza"
+    decision_tir = "se acepta" if tir_valor > tasa_descuento_slider.value else "se rechaza"
+
+    mo.md(
+        f"""
+        Con una tasa de descuento del **{tasa_descuento_slider.value:.1%}**:
+
+        - VAN: **{van_valor:,.2f} €** → según este criterio, el proyecto **{decision_van}**.
+        - TIR: **{tir_valor:.2%}** → comparada contra tu {tasa_descuento_slider.value:.1%}
+          exigido, según este criterio el proyecto **{decision_tir}**.
+
+        En el gráfico, la curva cruza el cero justo en la TIR — por eso, mientras la tasa
+        de descuento esté por debajo de la TIR, el VAN da positivo y ambos criterios
+        coinciden.
+        """
     )
     return
 

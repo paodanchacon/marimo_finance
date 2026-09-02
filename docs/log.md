@@ -1,6 +1,6 @@
 # Bitácora
 
-## 2026-09-01 — Tema 1: herramientas 2 (mejoras), 3, 4 y 5 completas
+## 2026-09-01 — Tema 1: Tier 1 completo (herramientas 2 a 6)
 
 - Subí el repo a GitHub: https://github.com/paodanchacon/marimo_finance
 - Herramienta 2a: cambié el gráfico de barras por frecuencia a una curva
@@ -33,7 +33,18 @@
   con deuda el ROE salta de 10% a 50% mientras el ROA se mantiene en 10%,
   ilustrando el efecto del apalancamiento) y 5b (ROI total vs. CAGR
   anualizado del mismo caso de inversión).
-- Próximo paso: herramienta 6, VAN y TIR — la última del Tier 1 núcleo.
+- Herramienta 6 (VAN y TIR, la última del Tier 1): agregué la dependencia
+  `numpy_financial` (la TIR no tiene fórmula cerrada, hace falta un solver
+  numérico). Escribí `van` y `tir` en `formulas.py`. Al validar contra el
+  ejemplo del PDF encontré que su TIR (24.8%) está mal calculada — la
+  correcta es 21.65% (verificado de forma independiente, VAN=0 justo ahí).
+  Notebook con 5 inputs (inversión + 3 flujos + tasa de descuento) y un
+  gráfico del perfil del VAN según la tasa, marcando dónde cruza cero (la
+  TIR) y dónde cae la tasa elegida.
+- **Tier 1 del Tema 1 completo: las 6 herramientas núcleo están listas y
+  validadas.**
+- Próxima decisión: armar Tier 2/3 de este tema, o pasar al Tema 2
+  (Finanzas personales y gestión del riesgo).
 
 ## 2026-08-31 — Tema 1: Conceptos teóricos esenciales
 
