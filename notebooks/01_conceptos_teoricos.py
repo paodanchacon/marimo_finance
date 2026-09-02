@@ -855,41 +855,39 @@ def _(
 
 @app.cell
 def _(mo):
-    mo.md(
-        r"""
-        ---
+    mo.md(r"""
+    ---
 
-        # VAN y TIR
+    # VAN y TIR
 
-        **VAN (Valor Actual Neto / NPV)**
-        Mide el valor, en dinero de hoy, de todos los flujos futuros de un proyecto o
-        inversión, descontados a una tasa que refleja el costo de oportunidad del dinero
-        (o el rendimiento mínimo exigido). Responde: "¿cuánto dinero de hoy me deja este
-        proyecto, ya descontado el paso del tiempo?"
+    **VAN (Valor Actual Neto / NPV)**
+    Mide el valor, en dinero de hoy, de todos los flujos futuros de un proyecto o
+    inversión, descontados a una tasa que refleja el costo de oportunidad del dinero
+    (o el rendimiento mínimo exigido). Responde: "¿cuánto dinero de hoy me deja este
+    proyecto, ya descontado el paso del tiempo?"
 
-        **TIR (Tasa Interna de Retorno / IRR)**
-        Es la tasa de descuento que hace que el VAN sea exactamente igual a cero — la
-        rentabilidad "propia" del proyecto, expresada como porcentaje. Responde: "¿qué
-        tasa de rendimiento anual me está dando este proyecto en sí mismo?"
+    **TIR (Tasa Interna de Retorno / IRR)**
+    Es la tasa de descuento que hace que el VAN sea exactamente igual a cero — la
+    rentabilidad "propia" del proyecto, expresada como porcentaje. Responde: "¿qué
+    tasa de rendimiento anual me está dando este proyecto en sí mismo?"
 
-        **Precaución práctica**: con flujos de caja irregulares (signos que cambian varias
-        veces), la TIR puede tener múltiples soluciones matemáticas o ser engañosa al
-        comparar proyectos de distinto tamaño o duración — en esos casos, el VAN es más
-        confiable como criterio de decisión, porque no tiene esas ambigüedades.
+    **Precaución práctica**: con flujos de caja irregulares (signos que cambian varias
+    veces), la TIR puede tener múltiples soluciones matemáticas o ser engañosa al
+    comparar proyectos de distinto tamaño o duración — en esos casos, el VAN es más
+    confiable como criterio de decisión, porque no tiene esas ambigüedades.
 
-        ## Fórmulas
+    ## Fórmulas
 
-        $$VAN = \sum_{t=0}^{n} \frac{F_t}{(1+k)^t}$$
+    $$VAN = \sum_{t=0}^{n} \frac{F_t}{(1+k)^t}$$
 
-        La TIR es la tasa $r$ tal que:
+    La TIR es la tasa $r$ tal que:
 
-        $$\sum_{t=0}^{n} \frac{F_t}{(1+r)^t} = 0$$
+    $$\sum_{t=0}^{n} \frac{F_t}{(1+r)^t} = 0$$
 
-        Donde $F_t$ es el flujo de caja en el período $t$ (el flujo $F_0$, la inversión
-        inicial, es negativo) y $k$ la tasa de descuento exigida. No hay fórmula
-        algebraica cerrada para la TIR — se encuentra numéricamente.
-        """
-    )
+    Donde $F_t$ es el flujo de caja en el período $t$ (el flujo $F_0$, la inversión
+    inicial, es negativo) y $k$ la tasa de descuento exigida. No hay fórmula
+    algebraica cerrada para la TIR — se encuentra numéricamente.
+    """)
     return
 
 
