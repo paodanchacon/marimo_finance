@@ -1,6 +1,6 @@
 # Bitácora
 
-## 2026-09-01 — Tema 1: herramientas 2 (mejoras), 3 y 4 completas
+## 2026-09-01 — Tema 1: herramientas 2 (mejoras), 3, 4 y 5 completas
 
 - Subí el repo a GitHub: https://github.com/paodanchacon/marimo_finance
 - Herramienta 2a: cambié el gráfico de barras por frecuencia a una curva
@@ -27,7 +27,13 @@
   inflación), gráfico de cascada (Nominal → Impuestos → Inflación → Real)
   con línea de referencia mostrando cuánto se desvía la resta lineal, y
   conclusión en texto simple.
-- Próximo paso: herramienta 5, panel ROI / ROE / ROA / CAGR.
+- Herramienta 5 (panel ROI/ROE/ROA/CAGR): escribí `roi`, `roe`, `roa` y
+  `cagr` en `formulas.py`, validadas contra los 4 ejemplos del PDF. Notebook
+  con dos mini-secciones: 5a (ROE vs. ROA — mismo beneficio y activos, pero
+  con deuda el ROE salta de 10% a 50% mientras el ROA se mantiene en 10%,
+  ilustrando el efecto del apalancamiento) y 5b (ROI total vs. CAGR
+  anualizado del mismo caso de inversión).
+- Próximo paso: herramienta 6, VAN y TIR — la última del Tier 1 núcleo.
 
 ## 2026-08-31 — Tema 1: Conceptos teóricos esenciales
 

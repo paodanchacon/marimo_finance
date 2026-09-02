@@ -71,3 +71,19 @@ def tasa_real(tasa_nominal: float, inflacion: float) -> float:
 def rentabilidad_neta_real(tasa_nominal: float, tasa_impuesto: float, inflacion: float) -> float:
     tasa_neta_impuestos = tasa_nominal * (1 - tasa_impuesto)
     return (1 + tasa_neta_impuestos) / (1 + inflacion) - 1
+
+
+def roi(beneficio_neto: float, costo_inversion: float) -> float:
+    return beneficio_neto / costo_inversion
+
+
+def roe(beneficio_neto: float, fondos_propios: float) -> float:
+    return beneficio_neto / fondos_propios
+
+
+def roa(beneficio_neto: float, activos_totales: float) -> float:
+    return beneficio_neto / activos_totales
+
+
+def cagr(valor_inicial: float, valor_final: float, periodos: float) -> float:
+    return (valor_final / valor_inicial) ** (1 / periodos) - 1

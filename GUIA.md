@@ -96,7 +96,7 @@ en el explorador de archivos.
 
 | # | Tema | Estado |
 |---|---|---|
-| 1 | Conceptos teóricos esenciales | 🔄 (4/6 herramientas núcleo) |
+| 1 | Conceptos teóricos esenciales | 🔄 (5/6 herramientas núcleo) |
 | 2 | Finanzas personales y gestión del riesgo | 🔲 |
 | 3 | Inversión inmobiliaria | 🔲 |
 | 4 | Análisis geopolítico para la inversión | 🔲 |
@@ -162,8 +162,8 @@ Ninguna necesita tabla SQL — son todas calculadoras paramétricas.
 | 2b | TIN vs. TAE — comparador de 2 ofertas | Por qué una comisión de apertura puede hacer más caro un préstamo con TIN más bajo | `tae_con_comision` | ✅ Implementada |
 | 3 | Amortización de hipoteca: francés vs. americano | Composición de la cuota (interés vs. capital) y la decisión "amortizar vs. invertir" | `cuota_francesa`, `cuota_americana`, `tabla_amortizacion_francesa`, `tabla_amortizacion_americana` | ✅ Implementada |
 | 4 | Rentabilidad neta real | Cómo inflación e impuestos erosionan la rentabilidad nominal (fórmula de Fisher, no la resta simple) | `tasa_real`, `rentabilidad_neta_real` | ✅ Implementada |
-| 5 | Panel ROI / ROE / ROA / CAGR | Comparar de un vistazo distintos medidores de rentabilidad sobre el mismo caso | `roi`, `roe`, `roa`, `cagr` | 🔲 Pendiente (siguiente) |
-| 6 | VAN y TIR | Decidir si un proyecto/inversión es viable dado un flujo de caja y una tasa de descuento | `van`, `tir` (requiere solver numérico) | 🔲 Pendiente |
+| 5 | Panel ROI / ROE / ROA / CAGR | Comparar de un vistazo distintos medidores de rentabilidad sobre el mismo caso | `roi`, `roe`, `roa`, `cagr` | ✅ Implementada |
+| 6 | VAN y TIR | Decidir si un proyecto/inversión es viable dado un flujo de caja y una tasa de descuento | `van`, `tir` (requiere solver numérico) | 🔲 Pendiente (siguiente, última del Tier 1) |
 
 **Tier 2 — Complementarias (buen valor añadido, a definir si entran en esta ronda)**
 
@@ -203,11 +203,13 @@ o definiciones — no ganan nada con sliders.
 ## 11. Estado actual
 
 Repo en GitHub: https://github.com/paodanchacon/marimo_finance. Tema 1 en
-curso, 4/6 herramientas núcleo listas y validadas (ver detalle en 9.1):
+curso, 5/6 herramientas núcleo listas y validadas (ver detalle en 9.1):
 interés simple vs. compuesto, TIN vs. TAE (2a y 2b), amortización de
-hipoteca francés vs. americano, y rentabilidad neta real (Fisher, con
-impuestos e inflación). `src/formulas.py` tiene `interes_simple`,
-`interes_compuesto`, `tin_a_tae`, `tae_con_comision`, `cuota_francesa`,
-`cuota_americana`, `tabla_amortizacion_francesa`,
-`tabla_amortizacion_americana`, `tasa_real` y `rentabilidad_neta_real`.
-Siguiente paso: herramienta 5, panel ROI / ROE / ROA / CAGR.
+hipoteca francés vs. americano, rentabilidad neta real (Fisher, con
+impuestos e inflación), y panel ROI/ROE/ROA/CAGR (5a: ROE vs. ROA con
+apalancamiento; 5b: ROI total vs. CAGR anualizado). `src/formulas.py` tiene
+`interes_simple`, `interes_compuesto`, `tin_a_tae`, `tae_con_comision`,
+`cuota_francesa`, `cuota_americana`, `tabla_amortizacion_francesa`,
+`tabla_amortizacion_americana`, `tasa_real`, `rentabilidad_neta_real`,
+`roi`, `roe`, `roa` y `cagr`. Siguiente paso: herramienta 6, VAN y TIR —
+la última del Tier 1 núcleo.

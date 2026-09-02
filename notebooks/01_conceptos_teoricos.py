@@ -17,9 +17,13 @@ def _():
     from plotly.subplots import make_subplots
 
     from src.formulas import (
+        cagr,
         interes_compuesto,
         interes_simple,
         rentabilidad_neta_real,
+        roa,
+        roe,
+        roi,
         tabla_amortizacion_americana,
         tabla_amortizacion_francesa,
         tae_con_comision,
@@ -27,6 +31,7 @@ def _():
     )
 
     return (
+        cagr,
         go,
         interes_compuesto,
         interes_simple,
@@ -34,6 +39,9 @@ def _():
         mo,
         np,
         rentabilidad_neta_real,
+        roa,
+        roe,
+        roi,
         tabla_amortizacion_americana,
         tabla_amortizacion_francesa,
         tae_con_comision,
@@ -663,6 +671,181 @@ def _(
     **{tasa_real_resultado:.2%}** real — eso es lo que de verdad ganás en poder
     adquisitivo.
     """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Panel ROI / ROE / ROA / CAGR
+
+    **ROI (Return on Investment)**
+    Mide la rentabilidad de una inversión específica frente a lo que costó.
+
+    **ROE (Return on Equity)**
+    Mide cuánta utilidad genera una empresa por cada peso que pusieron los
+    accionistas (el patrimonio neto).
+
+    **ROA (Return on Assets)**
+    Mide cuánta utilidad genera una empresa por cada peso de activos totales que
+    controla, sin importar si esos activos se financiaron con deuda o con capital
+    propio.
+
+    **Por qué ROE y ROA pueden diferir mucho en la misma empresa**
+    La clave es el apalancamiento (deuda). Activos = Patrimonio + Deuda. Si una
+    empresa financia buena parte de sus activos con deuda, sus activos totales son
+    mucho mayores que su patrimonio. Eso hace que el denominador del ROE sea más
+    chico que el del ROA → el ROE sube artificialmente aunque la eficiencia real
+    operativa (medida por el ROA) sea modesta.
+
+    **CAGR (Compound Annual Growth Rate)**
+    Mide la tasa de crecimiento anual compuesta de una inversión o métrica a lo
+    largo de varios años, suavizando la volatilidad año a año.
+
+    ## Fórmulas
+
+    $$ROI = \frac{Beneficio\ neto}{Coste\ de\ la\ inversión}$$
+
+    $$ROE = \frac{Beneficio\ neto}{Fondos\ propios}$$
+
+    $$ROA = \frac{Beneficio\ neto}{Activos\ totales}$$
+
+    $$CAGR = \left(\frac{Valor\ final}{Valor\ inicial}\right)^{1/n} - 1$$
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Herramienta 5a: ROE vs. ROA — el efecto del apalancamiento
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    beneficio_slider = mo.ui.number(
+        start=0, stop=10_000_000, step=10_000, value=1_000_000, label="Beneficio neto (€)"
+    )
+    patrimonio_slider = mo.ui.number(
+        start=1_000, stop=50_000_000, step=10_000, value=10_000_000, label="Patrimonio (fondos propios, €)"
+    )
+    deuda_slider = mo.ui.number(
+        start=0, stop=50_000_000, step=10_000, value=0, label="Deuda (€)"
+    )
+    mo.hstack([beneficio_slider, patrimonio_slider, deuda_slider])
+    return beneficio_slider, deuda_slider, patrimonio_slider
+
+
+@app.cell
+def _(beneficio_slider, deuda_slider, go, mo, patrimonio_slider, roa, roe):
+    activos_totales = patrimonio_slider.value + deuda_slider.value
+    roe_valor = roe(beneficio_slider.value, patrimonio_slider.value)
+    roa_valor = roa(beneficio_slider.value, activos_totales)
+
+    fig_roe_roa = go.Figure(
+        go.Bar(x=["ROE", "ROA"], y=[roe_valor, roa_valor], marker_color=["steelblue", "seagreen"])
+    )
+    fig_roe_roa.update_layout(
+        title=f"ROE vs. ROA (activos totales: {activos_totales:,.0f} €)",
+        yaxis_title="Rentabilidad",
+        yaxis_tickformat=".1%",
+    )
+
+    mo.vstack(
+        [
+            fig_roe_roa,
+            mo.md(
+                f"""
+                Con un patrimonio de **{patrimonio_slider.value:,.0f} €** y una deuda de
+                **{deuda_slider.value:,.0f} €** (activos totales:
+                **{activos_totales:,.0f} €**):
+
+                - ROE: **{roe_valor:.2%}**
+                - ROA: **{roa_valor:.2%}**
+
+                Cuanta más deuda, más se separan — el ROE sube sin que la empresa sea
+                realmente más eficiente.
+                """
+            ),
+        ]
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Herramienta 5b: ROI y CAGR de tu inversión
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    capital_invertido_slider = mo.ui.number(
+        start=100, stop=1_000_000, step=100, value=10_000, label="Capital invertido (€)"
+    )
+    valor_final_slider = mo.ui.number(
+        start=100, stop=2_000_000, step=100, value=15_000, label="Valor final (€)"
+    )
+    anios_inversion_slider = mo.ui.slider(
+        start=1, stop=30, step=1, value=5, label="Años", show_value=True
+    )
+    mo.hstack([capital_invertido_slider, valor_final_slider, anios_inversion_slider])
+    return anios_inversion_slider, capital_invertido_slider, valor_final_slider
+
+
+@app.cell
+def _(
+    anios_inversion_slider,
+    cagr,
+    capital_invertido_slider,
+    go,
+    mo,
+    roi,
+    valor_final_slider,
+):
+    beneficio_inversion = valor_final_slider.value - capital_invertido_slider.value
+    roi_valor = roi(beneficio_inversion, capital_invertido_slider.value)
+    cagr_valor = cagr(
+        capital_invertido_slider.value, valor_final_slider.value, anios_inversion_slider.value
+    )
+
+    fig_roi_cagr = go.Figure(
+        go.Bar(
+            x=["ROI (retorno total)", "CAGR (anualizado)"],
+            y=[roi_valor, cagr_valor],
+            marker_color=["steelblue", "seagreen"],
+        )
+    )
+    fig_roi_cagr.update_layout(
+        title=f"ROI total vs. CAGR anualizado ({anios_inversion_slider.value} años)",
+        yaxis_title="Rentabilidad",
+        yaxis_tickformat=".1%",
+    )
+
+    mo.vstack(
+        [
+            fig_roi_cagr,
+            mo.md(
+                f"""
+                De **{capital_invertido_slider.value:,.0f} €** a
+                **{valor_final_slider.value:,.0f} €** en
+                **{anios_inversion_slider.value} años**:
+
+                - ROI (retorno total del período): **{roi_valor:.2%}**
+                - CAGR (retorno anualizado equivalente): **{cagr_valor:.2%}**
+
+                El mismo resultado se ve muy distinto según lo mires en total o "por año" —
+                y esa diferencia se agranda cuanto más largo es el plazo.
+                """
+            ),
+        ]
+    )
     return
 
 
