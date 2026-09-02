@@ -19,6 +19,7 @@ def _():
     from src.formulas import (
         interes_compuesto,
         interes_simple,
+        rentabilidad_neta_real,
         tabla_amortizacion_americana,
         tabla_amortizacion_francesa,
         tae_con_comision,
@@ -32,6 +33,7 @@ def _():
         make_subplots,
         mo,
         np,
+        rentabilidad_neta_real,
         tabla_amortizacion_americana,
         tabla_amortizacion_francesa,
         tae_con_comision,
@@ -532,6 +534,135 @@ def _(mo, tabla_americano, tabla_frances):
         en total, porque el capital nunca baja hasta el último pago.
         """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Rentabilidad neta real
+
+    **La inflación como "impuesto silencioso"**
+    No la cobra ningún gobierno directamente, pero te quita poder adquisitivo igual
+    que un impuesto: si tu dinero no rinde por encima de la inflación, estás perdiendo
+    valor real aunque el número en tu cuenta no baje. Su efecto es exponencial, no
+    lineal — la inflación actúa por capitalización compuesta, igual que un interés.
+
+    **Cómo entran los impuestos: la plusvalía**
+    La plusvalía (o ganancia de capital) es la diferencia positiva entre el precio de
+    venta y el precio de compra de un activo (acción, inmueble, fondo, etc.). El
+    impuesto se cobra solo sobre esa ganancia, no sobre el capital total, con una tasa
+    que varía según país y tipo de activo.
+
+    **Batir a la inflación y a los impuestos**
+    La rentabilidad nominal (la que ves en el papel) no es la que realmente importa —
+    lo que importa es la rentabilidad neta real, después de descontar impuestos e
+    inflación.
+
+    ## Fórmulas
+
+    Tasa real (efecto Fisher, no resta lineal — porque la inflación compone):
+
+    $$i_{real} = \frac{1 + i_{nominal}}{1 + \pi} - 1$$
+
+    Con impuestos sobre la ganancia:
+
+    $$i_{neto\ de\ impuestos} = i_{nominal} \times (1 - t)$$
+
+    $$i_{real\ neto} = \frac{1 + i_{neto\ de\ impuestos}}{1 + \pi} - 1$$
+
+    Donde $\pi$ es la inflación anual y $t$ la tasa de impuesto sobre la ganancia. El
+    impuesto se aplica primero (sobre la ganancia nominal, que es como funcionan la
+    mayoría de los sistemas impositivos reales) y después se ajusta por inflación.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    nominal_slider = mo.ui.slider(
+        start=0.0, stop=0.30, step=0.005, value=0.10, label="Rentabilidad nominal", show_value=True
+    )
+    impuesto_slider = mo.ui.slider(
+        start=0.0,
+        stop=0.40,
+        step=0.01,
+        value=0.19,
+        label="Tasa de impuesto (sobre la ganancia)",
+        show_value=True,
+    )
+    inflacion_slider = mo.ui.slider(
+        start=0.0, stop=0.15, step=0.005, value=0.04, label="Inflación anual", show_value=True
+    )
+    mo.hstack([nominal_slider, impuesto_slider, inflacion_slider])
+    return impuesto_slider, inflacion_slider, nominal_slider
+
+
+@app.cell
+def _(
+    go,
+    impuesto_slider,
+    inflacion_slider,
+    nominal_slider,
+    rentabilidad_neta_real,
+):
+    tasa_neta_impuestos = nominal_slider.value * (1 - impuesto_slider.value)
+    tasa_real_resultado = rentabilidad_neta_real(
+        nominal_slider.value, impuesto_slider.value, inflacion_slider.value
+    )
+    tasa_real_lineal = tasa_neta_impuestos - inflacion_slider.value
+
+    fig_real = go.Figure(
+        go.Waterfall(
+            x=["Nominal", "Impuestos", "Después de\nimpuestos", "Inflación", "Real"],
+            measure=["absolute", "relative", "total", "relative", "total"],
+            y=[
+                nominal_slider.value,
+                tasa_neta_impuestos - nominal_slider.value,
+                tasa_neta_impuestos,
+                tasa_real_resultado - tasa_neta_impuestos,
+                tasa_real_resultado,
+            ],
+            decreasing={"marker": {"color": "indianred"}},
+            increasing={"marker": {"color": "seagreen"}},
+            totals={"marker": {"color": "steelblue"}},
+        )
+    )
+    fig_real.add_hline(
+        y=tasa_real_lineal,
+        line_dash="dash",
+        annotation_text=f"Si restaras la inflación en vez de dividir: {tasa_real_lineal:.2%}",
+        annotation_position="bottom right",
+    )
+    fig_real.update_layout(
+        title="De la rentabilidad nominal a la rentabilidad real",
+        yaxis_title="Tasa",
+        yaxis_tickformat=".1%",
+        showlegend=False,
+    )
+    fig_real
+    return (tasa_real_resultado,)
+
+
+@app.cell
+def _(
+    impuesto_slider,
+    inflacion_slider,
+    mo,
+    nominal_slider,
+    tasa_real_resultado,
+):
+    mo.md(f"""
+    Con una rentabilidad nominal del **{nominal_slider.value:.1%}**, una tasa de
+    impuesto del **{impuesto_slider.value:.1%}** sobre la ganancia, y una inflación
+    del **{inflacion_slider.value:.1%}**:
+
+    De tu **{nominal_slider.value:.1%}** nominal, te queda un
+    **{tasa_real_resultado:.2%}** real — eso es lo que de verdad ganás en poder
+    adquisitivo.
+    """)
     return
 
 

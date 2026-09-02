@@ -1,17 +1,8 @@
 # Bitácora
 
-## 2026-09-01 — Tema 1: herramienta 2 (mejoras) y herramienta 3 completa
+## 2026-09-01 — Tema 1: herramientas 2 (mejoras), 3 y 4 completas
 
 - Subí el repo a GitHub: https://github.com/paodanchacon/marimo_finance
-- Herramienta 3 (amortización de hipoteca): escribí `cuota_francesa`,
-  `cuota_americana`, `tabla_amortizacion_francesa` y
-  `tabla_amortizacion_americana` en `formulas.py`, verificadas contra el
-  ejemplo del PDF (200.000€, 30 años, 3% → cuota 843.21€, exacto).
-- Notebook: teoría + sliders (capital, tasa, plazo) + gráfico comparando
-  francés (área apilada interés/capital) vs. americano (interés mensual y
-  saldo pendiente en ejes separados, tras corregir un problema de escala:
-  el interés mensual quedaba invisible al lado del pago final de 200.000€).
-- Conclusión: compara intereses totales pagados en cada sistema.
 - Herramienta 2a: cambié el gráfico de barras por frecuencia a una curva
   (eje X logarítmico, ya que las frecuencias van de 1 a 365) con los 5
   puntos estándar marcados y una línea de referencia con el límite de
@@ -19,8 +10,24 @@
 - Herramienta 2b: agregué un gráfico de barras agrupadas (TIN vs. TAE real
   por oferta) para ver de un vistazo cuánto infla cada comisión el costo
   efectivo.
-- Próximo paso: herramienta 3, amortización de hipoteca (francés vs.
-  americano).
+- Herramienta 3 (amortización de hipoteca): escribí `cuota_francesa`,
+  `cuota_americana`, `tabla_amortizacion_francesa` y
+  `tabla_amortizacion_americana` en `formulas.py`, verificadas contra el
+  ejemplo del PDF (200.000€, 30 años, 3% → cuota 843.21€, exacto).
+  Notebook con sliders + gráfico comparando francés (área apilada
+  interés/capital) vs. americano (interés mensual y saldo pendiente en
+  ejes separados, tras corregir un problema de escala: el interés mensual
+  quedaba invisible al lado del pago final de 200.000€) + conclusión
+  comparando intereses totales pagados en cada sistema.
+- Herramienta 4 (rentabilidad neta real): escribí `tasa_real` (fórmula de
+  Fisher) y `rentabilidad_neta_real` (impuestos + inflación) en
+  `formulas.py`. En la teoría había puesto la resta lineal (nominal −
+  impuestos − inflación); la corregimos a Fisher porque la inflación
+  compone, igual que el interés. Notebook con 3 sliders (nominal, impuesto,
+  inflación), gráfico de cascada (Nominal → Impuestos → Inflación → Real)
+  con línea de referencia mostrando cuánto se desvía la resta lineal, y
+  conclusión en texto simple.
+- Próximo paso: herramienta 5, panel ROI / ROE / ROA / CAGR.
 
 ## 2026-08-31 — Tema 1: Conceptos teóricos esenciales
 

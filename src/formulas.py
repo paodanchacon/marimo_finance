@@ -62,3 +62,12 @@ def tabla_amortizacion_americana(capital: float, tasa: float, periodos: int) -> 
             }
         )
     return pd.DataFrame(filas)
+
+
+def tasa_real(tasa_nominal: float, inflacion: float) -> float:
+    return (1 + tasa_nominal) / (1 + inflacion) - 1
+
+
+def rentabilidad_neta_real(tasa_nominal: float, tasa_impuesto: float, inflacion: float) -> float:
+    tasa_neta_impuestos = tasa_nominal * (1 - tasa_impuesto)
+    return (1 + tasa_neta_impuestos) / (1 + inflacion) - 1
