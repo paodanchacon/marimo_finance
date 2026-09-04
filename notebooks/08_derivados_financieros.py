@@ -524,7 +524,6 @@ def _(
     np,
     q_valor,
     r_valor,
-    s_valor,
     sigma_valor,
     t_valor,
     theta_call_americana,
@@ -929,7 +928,17 @@ def _(
             """
         )
     mo.md(texto_iv)
-    return en_zona_degenerada, iv_valor, precio_mercado_valor, tipo_iv
+    return (
+        en_zona_degenerada,
+        iv_valor,
+        k_valor_iv,
+        n_pasos_iv,
+        precio_mercado_valor,
+        r_valor_iv,
+        s_valor_iv,
+        t_valor_iv,
+        tipo_iv,
+    )
 
 
 @app.cell
@@ -1052,7 +1061,14 @@ def _(mo):
             mo.hstack([r3_slider, sigma3_slider, mu_slider]),
         ]
     )
-    return dias3_slider, k3_slider, mu_slider, r3_slider, s3_slider, sigma3_slider
+    return (
+        dias3_slider,
+        k3_slider,
+        mu_slider,
+        r3_slider,
+        s3_slider,
+        sigma3_slider,
+    )
 
 
 @app.cell
@@ -1113,6 +1129,7 @@ def _(
     return (
         breakeven_call,
         breakeven_put,
+        k3_valor,
         mu_valor,
         prob_beneficio_call_p,
         prob_beneficio_put_p,
@@ -1189,26 +1206,24 @@ def _(
     prob_beneficio_put_p,
     s3_valor,
 ):
-    mo.md(
-        f"""
-        Con S={s3_valor:,.0f} $, K={k3_valor:,.0f} $, y suponiendo que el subyacente
-        rinde en promedio **{mu_valor:.1%} anual** (tu propia expectativa, no el
-        precio del mercado):
+    mo.md(f"""
+    Con S={s3_valor:,.0f} $, K={k3_valor:,.0f} $, y suponiendo que el subyacente
+    rinde en promedio **{mu_valor:.1%} anual** (tu propia expectativa, no el
+    precio del mercado):
 
-        - La call necesita que el subyacente supere **{breakeven_call:,.2f} $** al
-          vencimiento para dar beneficio. Con esa expectativa de retorno, la
-          probabilidad de que eso pase es del **{prob_beneficio_call_p:.1%}**.
-        - La put necesita que el subyacente caiga por debajo de
-          **{breakeven_put:,.2f} $**. La probabilidad de eso es del
-          **{prob_beneficio_put_p:.1%}**.
+    - La call necesita que el subyacente supere **{breakeven_call:,.2f} $** al
+      vencimiento para dar beneficio. Con esa expectativa de retorno, la
+      probabilidad de que eso pase es del **{prob_beneficio_call_p:.1%}**.
+    - La put necesita que el subyacente caiga por debajo de
+      **{breakeven_put:,.2f} $**. La probabilidad de eso es del
+      **{prob_beneficio_put_p:.1%}**.
 
-        Ninguna de las dos probabilidades tiene por qué acercarse al 50% —
-        comprar una opción no es una apuesta de "cara o cruz": el precio de la
-        prima ya descuenta buena parte de la ventaja direccional, así que
-        ganarle al mercado exige una expectativa de retorno genuinamente
-        distinta a la que ya está reflejada en el precio.
-        """
-    )
+    Ninguna de las dos probabilidades tiene por qué acercarse al 50% —
+    comprar una opción no es una apuesta de "cara o cruz": el precio de la
+    prima ya descuenta buena parte de la ventaja direccional, así que
+    ganarle al mercado exige una expectativa de retorno genuinamente
+    distinta a la que ya está reflejada en el precio.
+    """)
     return
 
 

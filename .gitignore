@@ -11,3 +11,6 @@ wheels/
 
 # marimo session cache
 __marimo__/
+
+# Claude Code local tool config
+.claude/
