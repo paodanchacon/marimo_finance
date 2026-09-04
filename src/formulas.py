@@ -356,3 +356,14 @@ def volatilidad_implicita_put_americana(
         else:
             sigma_alta = sigma_media
     return sigma_media
+
+
+def prob_mayor_a_vencimiento(s: float, umbral: float, t: float, mu: float, q: float, sigma: float) -> float:
+    d = (math.log(s / umbral) + (mu - q - sigma**2 / 2) * t) / (sigma * math.sqrt(t))
+    return norm.cdf(d)
+
+
+def densidad_precio_terminal(x: float, s: float, t: float, mu: float, q: float, sigma: float) -> float:
+    media_log = math.log(s) + (mu - q - sigma**2 / 2) * t
+    desvio_log = sigma * math.sqrt(t)
+    return norm.pdf((math.log(x) - media_log) / desvio_log) / (x * desvio_log)

@@ -19,10 +19,12 @@ def _():
     from src.formulas import (
         delta_call_americana,
         delta_put_americana,
+        densidad_precio_terminal,
         gamma_call_americana,
         gamma_put_americana,
         precio_binomial_call_americana,
         precio_binomial_put_americana,
+        prob_mayor_a_vencimiento,
         rho_call_americana,
         rho_put_americana,
         simular_precios_gbm,
@@ -38,6 +40,7 @@ def _():
     return (
         delta_call_americana,
         delta_put_americana,
+        densidad_precio_terminal,
         gamma_call_americana,
         gamma_put_americana,
         go,
@@ -46,6 +49,7 @@ def _():
         np,
         precio_binomial_call_americana,
         precio_binomial_put_americana,
+        prob_mayor_a_vencimiento,
         rho_call_americana,
         rho_put_americana,
         simular_precios_gbm,
@@ -970,6 +974,241 @@ def _(
         yaxis_title="Precio del modelo ($)",
     )
     fig_iv
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Motor 3: probabilidad de ganar
+
+    Todo lo anterior calculó precio y riesgo (griegas). Ahora la pregunta que
+    de verdad importa antes de operar: **¿qué tan probable es que esta
+    posición termine en beneficio?**
+
+    **El modelo**: bajo el mismo movimiento browniano geométrico de siempre
+    (4.3 del PDF), el precio al vencimiento $S_T$ sigue una distribución
+    **lognormal** — nunca negativa, con una cola larga hacia arriba:
+
+    $$\ln S_T \sim \mathcal{N}\big(\ln S_0 + (\mu - q - \sigma^2/2)T,\ \ \sigma^2 T\big)$$
+
+    **Dos medidas, dos preguntas distintas**
+
+    - **Neutral al riesgo ($Q$, con $\mu=r$)**: la medida con la que se pone
+      precio (Bloque 1 del PDF) — no representa lo que vos creés que va a
+      pasar, sino la que hace que el precio sea consistente con no
+      arbitraje. Bajo $Q$, la probabilidad de que la call termine ITM es
+      exactamente $N(d_2)$ — el mismo término que ya vimos en Black-Scholes.
+    - **Real ($P$, con tu propia expectativa de retorno $\mu$)**: la
+      probabilidad de verdad de que la apuesta salga bien, según lo que vos
+      esperás que rinda el subyacente (no necesariamente $r$). Contesta la
+      pregunta real, pero depende de una opinión tuya sobre el activo —
+      nadie te la puede dar gratis.
+
+    **ITM no es lo mismo que ganar**
+
+    Terminar in-the-money no alcanza para ganar plata: pagaste una prima. El
+    punto de equilibrio (breakeven) es el precio al que el beneficio es
+    exactamente cero:
+
+    $$\text{Breakeven call} = K + \text{prima} \qquad \text{Breakeven put} = K - \text{prima}$$
+
+    La probabilidad de **beneficio** usa el breakeven, no el strike — por
+    eso siempre es menor que la probabilidad de terminar ITM.
+
+    **Un límite honesto**: esto mide la probabilidad al vencimiento, si
+    mantenés la posición hasta el final. No captura la posibilidad de
+    cerrarla antes con ganancia (algo que sí se puede hacer con una
+    americana) — es la misma simplificación que usan la mayoría de las
+    plataformas de bróker cuando muestran "probability of profit".
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    s3_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Precio subyacente S ($)")
+    k3_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Strike K ($)")
+    dias3_slider = mo.ui.slider(
+        start=1, stop=365, step=1, value=30, label="Días a vencimiento", show_value=True
+    )
+    r3_slider = mo.ui.slider(
+        start=0.0, stop=0.10, step=0.0025, value=0.04, label="Tasa libre de riesgo",
+        show_value=True,
+    )
+    sigma3_slider = mo.ui.slider(
+        start=0.05, stop=1.0, step=0.01, value=0.25, label="Volatilidad anualizada (σ)",
+        show_value=True,
+    )
+    mu_slider = mo.ui.slider(
+        start=-0.20, stop=0.40, step=0.01, value=0.04,
+        label="Tu expectativa de retorno anual (μ)", show_value=True,
+    )
+    mo.vstack(
+        [
+            mo.hstack([s3_slider, k3_slider, dias3_slider]),
+            mo.hstack([r3_slider, sigma3_slider, mu_slider]),
+        ]
+    )
+    return dias3_slider, k3_slider, mu_slider, r3_slider, s3_slider, sigma3_slider
+
+
+@app.cell
+def _(
+    dias3_slider,
+    k3_slider,
+    mo,
+    mu_slider,
+    precio_binomial_call_americana,
+    precio_binomial_put_americana,
+    prob_mayor_a_vencimiento,
+    r3_slider,
+    s3_slider,
+    sigma3_slider,
+):
+    n_pasos_3 = 200
+    q3_valor = 0.0
+
+    s3_valor = s3_slider.value
+    k3_valor = k3_slider.value
+    t3_valor = dias3_slider.value / 365
+    r3_valor = r3_slider.value
+    sigma3_valor = sigma3_slider.value
+    mu_valor = mu_slider.value
+
+    prima3_call = precio_binomial_call_americana(
+        s3_valor, k3_valor, t3_valor, r3_valor, q3_valor, sigma3_valor, n_pasos_3
+    )
+    prima3_put = precio_binomial_put_americana(
+        s3_valor, k3_valor, t3_valor, r3_valor, q3_valor, sigma3_valor, n_pasos_3
+    )
+    breakeven_call = k3_valor + prima3_call
+    breakeven_put = k3_valor - prima3_put
+
+    prob_itm_call_q = prob_mayor_a_vencimiento(s3_valor, k3_valor, t3_valor, r3_valor, q3_valor, sigma3_valor)
+    prob_itm_call_p = prob_mayor_a_vencimiento(s3_valor, k3_valor, t3_valor, mu_valor, q3_valor, sigma3_valor)
+    prob_beneficio_call_p = prob_mayor_a_vencimiento(
+        s3_valor, breakeven_call, t3_valor, mu_valor, q3_valor, sigma3_valor
+    )
+
+    prob_itm_put_q = 1 - prob_mayor_a_vencimiento(s3_valor, k3_valor, t3_valor, r3_valor, q3_valor, sigma3_valor)
+    prob_itm_put_p = 1 - prob_mayor_a_vencimiento(s3_valor, k3_valor, t3_valor, mu_valor, q3_valor, sigma3_valor)
+    prob_beneficio_put_p = 1 - prob_mayor_a_vencimiento(
+        s3_valor, breakeven_put, t3_valor, mu_valor, q3_valor, sigma3_valor
+    )
+
+    mo.md(
+        f"""
+        | | Call | Put |
+        |---|---|---|
+        | Prima pagada | {prima3_call:,.2f} $ | {prima3_put:,.2f} $ |
+        | Breakeven | {breakeven_call:,.2f} $ | {breakeven_put:,.2f} $ |
+        | Prob. ITM (neutral al riesgo, Q) | {prob_itm_call_q:.1%} | {prob_itm_put_q:.1%} |
+        | Prob. ITM (real, con tu μ) | {prob_itm_call_p:.1%} | {prob_itm_put_p:.1%} |
+        | **Prob. de beneficio (real, con tu μ)** | **{prob_beneficio_call_p:.1%}** | **{prob_beneficio_put_p:.1%}** |
+        """
+    )
+    return (
+        breakeven_call,
+        breakeven_put,
+        mu_valor,
+        prob_beneficio_call_p,
+        prob_beneficio_put_p,
+        q3_valor,
+        s3_valor,
+        sigma3_valor,
+        t3_valor,
+    )
+
+
+@app.cell
+def _(
+    breakeven_call,
+    breakeven_put,
+    densidad_precio_terminal,
+    go,
+    k3_valor,
+    mu_valor,
+    np,
+    q3_valor,
+    s3_valor,
+    sigma3_valor,
+    t3_valor,
+):
+    x_rango = np.linspace(max(s3_valor * 0.2, 1), s3_valor * 3, 250)
+    densidad = [densidad_precio_terminal(x, s3_valor, t3_valor, mu_valor, q3_valor, sigma3_valor) for x in x_rango]
+
+    densidad_zona_call = [d if x >= breakeven_call else 0 for x, d in zip(x_rango, densidad)]
+    densidad_zona_put = [d if x <= breakeven_put else 0 for x, d in zip(x_rango, densidad)]
+
+    fig_densidad = go.Figure()
+    fig_densidad.add_trace(
+        go.Scatter(
+            x=x_rango, y=densidad_zona_call, mode="lines", line=dict(width=0),
+            fill="tozeroy", fillcolor="rgba(30,100,220,0.25)", name="Zona de beneficio (call)",
+        )
+    )
+    fig_densidad.add_trace(
+        go.Scatter(
+            x=x_rango, y=densidad_zona_put, mode="lines", line=dict(width=0),
+            fill="tozeroy", fillcolor="rgba(220,60,60,0.25)", name="Zona de beneficio (put)",
+        )
+    )
+    fig_densidad.add_trace(
+        go.Scatter(x=x_rango, y=densidad, mode="lines", name="Densidad de S_T (medida real)",
+                    line=dict(color="black")),
+    )
+    fig_densidad.add_vline(x=k3_valor, line_dash="dot", annotation_text="Strike (K)")
+    fig_densidad.add_vline(
+        x=breakeven_call, line_dash="dash", line_color="steelblue",
+        annotation_text="Breakeven call", annotation_position="top right",
+    )
+    fig_densidad.add_vline(
+        x=breakeven_put, line_dash="dash", line_color="indianred",
+        annotation_text="Breakeven put", annotation_position="top left",
+    )
+    fig_densidad.update_layout(
+        title="Distribución del precio al vencimiento y zonas de beneficio",
+        xaxis_title="Precio del subyacente al vencimiento (S_T)",
+        yaxis_title="Densidad de probabilidad",
+    )
+    fig_densidad
+    return
+
+
+@app.cell
+def _(
+    breakeven_call,
+    breakeven_put,
+    k3_valor,
+    mo,
+    mu_valor,
+    prob_beneficio_call_p,
+    prob_beneficio_put_p,
+    s3_valor,
+):
+    mo.md(
+        f"""
+        Con S={s3_valor:,.0f} $, K={k3_valor:,.0f} $, y suponiendo que el subyacente
+        rinde en promedio **{mu_valor:.1%} anual** (tu propia expectativa, no el
+        precio del mercado):
+
+        - La call necesita que el subyacente supere **{breakeven_call:,.2f} $** al
+          vencimiento para dar beneficio. Con esa expectativa de retorno, la
+          probabilidad de que eso pase es del **{prob_beneficio_call_p:.1%}**.
+        - La put necesita que el subyacente caiga por debajo de
+          **{breakeven_put:,.2f} $**. La probabilidad de eso es del
+          **{prob_beneficio_put_p:.1%}**.
+
+        Ninguna de las dos probabilidades tiene por qué acercarse al 50% —
+        comprar una opción no es una apuesta de "cara o cruz": el precio de la
+        prima ya descuenta buena parte de la ventaja direccional, así que
+        ganarle al mercado exige una expectativa de retorno genuinamente
+        distinta a la que ya está reflejada en el precio.
+        """
+    )
     return
 
 

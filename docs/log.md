@@ -1,5 +1,32 @@
 # Bitácora
 
+## 2026-09-04 (5) — Tema 8: Motor 3 - probabilidad de ganar
+
+- Subí todo lo que iba quedando pendiente a GitHub antes de arrancar.
+- Motor 3: contesta directo el punto #1 que pidió el usuario al arrancar el
+  tema ("probabilidad de ganar"). Modelo lognormal de S_T (mismo movimiento
+  browniano geométrico de siempre), distinguiendo la medida neutral al
+  riesgo (Q, μ=r — la de poner precio, N(d2) de Black-Scholes) de la medida
+  real (P, μ elegido por el usuario según su propia expectativa de retorno).
+- Validé `prob_mayor_a_vencimiento` en 4 frentes: (1) con μ=r da exactamente
+  el mismo número que N(d2) de Black-Scholes (0.504003 ambos); (2) coincide
+  con una simulación Monte Carlo independiente de 200k caminos (0.502875);
+  (3) `densidad_precio_terminal` integra a 1.0 en todo el dominio; (4)
+  probabilidad de *beneficio* (usando breakeven = K±prima) sale
+  consistentemente menor que probabilidad de *ITM* (con los defaults:
+  ITM≈50.4% vs. beneficio≈34.3%) — el punto pedagógico central de este
+  motor: terminar ITM no alcanza para ganar, hay que superar también la
+  prima pagada.
+- Agregué `prob_mayor_a_vencimiento` y `densidad_precio_terminal` a
+  `formulas.py`. Sin dependencias nuevas.
+- Notebook: teoría (Q vs. P, lognormal, ITM vs. beneficio, límite honesto de
+  que es un análisis al vencimiento sin capturar cierres anticipados), 6
+  sliders (S, K, días, r, σ, μ — mi propia expectativa de retorno), tabla de
+  prima/breakeven/probabilidades call vs. put, gráfico de la densidad de
+  S_T con las zonas de beneficio sombreadas, conclusión en lenguaje simple.
+- Con esto los 3 motores del Tema 8 quedan completos. Verificado con
+  `marimo check` y `marimo export html` sin errores.
+
 ## 2026-09-04 (4) — Tema 8: Motor 2 - volatilidad histórica vs. implícita
 
 - Al revisar el archivo para esta entrada noté que el encabezado `# Bitácora`

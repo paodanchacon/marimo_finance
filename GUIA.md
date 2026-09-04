@@ -203,7 +203,7 @@ estrategia por estrategia, cada una como su propia sub-sección.
 |---|---|---|---|---|
 | 1 | Opciones americanas (árbol binomial CRR-Merton, con dividendo q) | Prima + las 5 griegas (Delta, Gamma, Theta, Vega, Rho) para call y put americanas dado S, K, T, r, q, σ. Delta/Gamma/Theta se leen de los nodos del árbol (más estable que diferencias finitas externas); Vega/Rho por rearmado del árbol con el parámetro bumpeado | `precio_binomial_call_americana`, `precio_binomial_put_americana`, `delta_call_americana`, `delta_put_americana`, `gamma_call_americana`, `gamma_put_americana`, `theta_call_americana`, `theta_put_americana`, `vega_call_americana`, `vega_put_americana`, `rho_call_americana`, `rho_put_americana` | ✅ Implementado |
 | 2 | Volatilidad histórica vs. implícita | Vol. histórica desde una serie de precios (simulados vía GBM) vs. vol. implícita despejada por bisección sobre el árbol binomial americano; detecta y avisa cuando la IV no está definida (zona de ejercicio anticipado, Vega≈0) | `simular_precios_gbm`, `volatilidad_historica`, `volatilidad_implicita_call_americana`, `volatilidad_implicita_put_americana` | ✅ Implementado |
-| 3 | Probabilidad y distribución del subyacente al vencimiento | Con σ y T, modela dónde puede terminar el precio (lognormal) para sacar prob. de ITM y prob. de beneficio real de una estrategia (considerando la prima pagada) | 🔲 A definir | 🔲 Pendiente |
+| 3 | Probabilidad y distribución del subyacente al vencimiento | Distribución lognormal de S_T bajo medida neutral (Q, μ=r) y real (P, μ elegido por el usuario); prob. de ITM (ambas medidas) y prob. de beneficio real (con breakeven, no strike) | `prob_mayor_a_vencimiento`, `densidad_precio_terminal` | ✅ Implementado |
 
 Nota: el notebook del Motor 1 solo muestra opciones americanas (a pedido del
 usuario — es lo que de verdad se opera en la práctica, no interesa por ahora
@@ -331,5 +331,35 @@ Misma sección del notebook, agregado después de Motor 1. Dos sub-partes:
 `volatilidad_implicita_call_americana`, `volatilidad_implicita_put_americana`.
 Sin dependencias nuevas (usa `numpy`, ya en el proyecto).
 
-Siguiente decisión (Tema 8): construir el Motor 3 (probabilidad/distribución
-del subyacente al vencimiento).
+**Motor 3 — probabilidad de ganar, completo y validado.** Contesta
+directamente el punto #1 que el usuario pidió al arrancar el tema
+("probabilidad de ganar"). Modela $S_T$ como lognormal (mismo movimiento
+browniano geométrico de siempre) y distingue dos medidas:
+
+- **Neutral al riesgo ($Q$, $\mu=r$)**: la probabilidad de ITM bajo esta
+  medida es exactamente $N(d_2)$ — validado que `prob_mayor_a_vencimiento`
+  con $\mu=r$ da el mismo número que el $N(d_2)$ de Black-Scholes
+  (0.504003 ambos) y que una simulación Monte Carlo independiente de 200k
+  caminos (0.502875, coincide dentro del margen esperado de una muestra
+  finita).
+- **Real ($P$, con $\mu$ elegido por el usuario)**: la probabilidad real de
+  que la apuesta salga bien, según la expectativa de retorno propia del
+  usuario — distinta de la de mercado.
+
+El punto pedagógico central: **ITM no es lo mismo que ganar** — la
+probabilidad de *beneficio* usa el breakeven (K ± prima, calculado con el
+motor de precios del Motor 1), no el strike, y por eso siempre es menor a
+la probabilidad de ITM (validado: con los defaults, ITM≈50.4% pero
+beneficio≈34.3%). Notebook: teoría (Q vs. P, lognormal, ITM vs. beneficio,
+límite honesto de que es un análisis "al vencimiento", sin capturar cierres
+anticipados), 6 sliders (S, K, días, r, σ, μ), tabla de prima/breakeven/
+probabilidades call vs. put, gráfico de la densidad de $S_T$ con las zonas
+de beneficio sombreadas (call y put), conclusión en lenguaje simple.
+`src/formulas.py` suma: `prob_mayor_a_vencimiento`, `densidad_precio_terminal`
+(validada: integra a 1.0). Sin dependencias nuevas.
+
+Con esto, los 3 motores del Tema 8 (ver 9.2) están completos. Siguiente
+decisión (Tema 8): empezar con las herramientas de estrategia (Tier 1 —
+direccionales simples: Long Call, Long Put, Covered Call, Cash-Secured Put,
+Protective Put) que consumen estos 3 motores, o construir primero la pieza
+de liquidez (C).
