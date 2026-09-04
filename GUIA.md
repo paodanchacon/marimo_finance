@@ -104,7 +104,7 @@ en el explorador de archivos.
 | 5 | Renta variable (bolsa) | 🔲 |
 | 6 | Renta fija | 🔲 |
 | 7 | Materias primas | 🔲 |
-| 8 | Derivados financieros | 🔲 |
+| 8 | Derivados financieros | 🔄 (Motor 1/3 ✅ — ver 9.2) |
 | 9 | Bitcoin y criptoactivos | 🔲 |
 | 10 | Gestión empresarial, fiscalidad & Private Equity | 🔲 |
 | 11 | Principios económicos para la inversión | 🔲 |
@@ -141,7 +141,7 @@ tema por tema antes de escribir código, en el orden de la sección 7.
 | 5 | Renta variable (bolsa) | `acciones` | `cagr`, `rentabilidad_total`, `dividend_yield`, `volatilidad`, `sharpe_ratio`, `drawdown_maximo` | Simulador de cartera: sliders de peso por activo → CAGR y volatilidad combinados |
 | 6 | Renta fija | `bonos` | `precio_bono`, `ytm_aproximado`, `duracion_macaulay`, `duracion_modificada` | Calculadora de precio/duración de bonos: sliders de cupón, plazo, tasa de mercado |
 | 7 | Materias primas | `materias_primas` | `rentabilidad_periodo`, `correlacion_con_inflacion` | Comparador materia prima vs. inflación en un rango de fechas |
-| 8 | Derivados financieros | `opciones` | `payoff_call`, `payoff_put`, `punto_equilibrio`, `black_scholes_simplificado` | Simulador de payoff de opciones: sliders de strike, prima, precio del subyacente |
+| 8 | Derivados financieros | *(sin tabla propia por ahora — motores paramétricos; liquidez sí necesitará datos reales de mercado más adelante)* | Ver detalle en la sección 9.2 — varios motores + una herramienta por estrategia | `notebooks/08_derivados_financieros.py`, una sub-sección interactiva por motor/estrategia |
 | 9 | Bitcoin y criptoactivos | `criptoactivos` | `cagr`, `volatilidad`, `simulacion_dca` | Simulador de DCA (aporte periódico fijo) vs. inversión de una sola vez |
 | 10 | Gestión empresarial, fiscalidad & PE | `proyectos_empresariales`, `impuestos_tramos` | `van`, `tir`, `payback_period`, `ev_ebitda_multiplo`, `impuesto_estimado` | Evaluador de proyectos: flujos de caja por período + slider de tasa de descuento → VAN/TIR en vivo |
 | 11 | Principios económicos | `indicadores_macro` | `tasa_real`, `correlacion_indicador_activo` | Dashboard macro (inflación, tasas) vs. evolución del patrimonio neto propio (tema 2) |
@@ -189,6 +189,48 @@ confiable (regulación, A-book/B-book, cuentas segregadas), fundamentos de
 Forex/cripto (blockchain, PoW/PoS, stablecoins) y ratings ESG. Son checklists
 o definiciones — no ganan nada con sliders.
 
+### 9.2 Detalle: Tema 8 — Derivados financieros (opciones)
+
+Adelantado fuera de orden (el usuario quiere analizar estrategias de opciones
+—probabilidad de ganar, pérdida/beneficio máximos, prima, volatilidad,
+griegas, liquidez— antes de operar de verdad en bolsa). Vive en
+`notebooks/08_derivados_financieros.py`, creciendo motor por motor y luego
+estrategia por estrategia, cada una como su propia sub-sección.
+
+**A. Motores (building blocks — los usan todas las estrategias)**
+
+| # | Motor | Qué resuelve | Fórmulas (`formulas.py`) | Estado |
+|---|---|---|---|---|
+| 1 | Opciones americanas (árbol binomial CRR-Merton, con dividendo q) | Prima + las 5 griegas (Delta, Gamma, Theta, Vega, Rho) para call y put americanas dado S, K, T, r, q, σ. Delta/Gamma/Theta se leen de los nodos del árbol (más estable que diferencias finitas externas); Vega/Rho por rearmado del árbol con el parámetro bumpeado | `precio_binomial_call_americana`, `precio_binomial_put_americana`, `delta_call_americana`, `delta_put_americana`, `gamma_call_americana`, `gamma_put_americana`, `theta_call_americana`, `theta_put_americana`, `vega_call_americana`, `vega_put_americana`, `rho_call_americana`, `rho_put_americana` | ✅ Implementado |
+| 2 | Volatilidad histórica vs. implícita | Vol. histórica desde una serie de precios vs. vol. implícita despejada de un precio de mercado real (inversión numérica de Black-Scholes) | 🔲 A definir | 🔲 Pendiente |
+| 3 | Probabilidad y distribución del subyacente al vencimiento | Con σ y T, modela dónde puede terminar el precio (lognormal) para sacar prob. de ITM y prob. de beneficio real de una estrategia (considerando la prima pagada) | 🔲 A definir | 🔲 Pendiente |
+
+Nota: el notebook del Motor 1 solo muestra opciones americanas (a pedido del
+usuario — es lo que de verdad se opera en la práctica, no interesa por ahora
+la comparación con europeas). Las fórmulas de Black-Scholes europeas
+(`precio_call`, `precio_put`, `delta_call`, `delta_put`, `gamma`, `vega`,
+`theta_call`, `theta_put`, `rho_call`, `rho_put`) y los binomiales europeos
+(`precio_binomial_call_europea`, `precio_binomial_put_europea`) siguen en
+`formulas.py`, ya validados, por si hacen falta más adelante (ej. Motor 2/3,
+u otro subyacente donde sí aplique el estilo europeo) — pero el notebook ya
+no los importa.
+
+**B. Herramientas de estrategia (una por estrategia, consumen los motores de A)**
+
+| Tier | Estrategias | Estado |
+|---|---|---|
+| 1 — direccionales simples | Long Call, Long Put, Covered Call, Cash-Secured Put, Protective Put | 🔲 Pendiente |
+| 2 — spreads verticales | Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread | 🔲 Pendiente |
+| 3 — volatilidad/neutrales | Straddle, Strangle, Iron Condor, Butterfly, Calendar Spread | 🔲 Pendiente |
+
+**C. Liquidez** — caso aparte: depende de datos reales de mercado (bid-ask,
+volumen, open interest), no de fórmulas. Pendiente decidir input manual vs.
+conectar una fuente de datos real (ej. `yfinance`). 🔲 Pendiente.
+
+**D. Otros complementarios** (a priorizar más adelante): ratio riesgo/beneficio
+y valor esperado de la estrategia, IV Rank/Percentile, evolución de Theta en
+el tiempo (no solo al vencimiento), riesgo de asignación anticipada. 🔲 Pendiente.
+
 ## 10. Decisiones
 
 - ~~Nombre y ubicación final de la carpeta del proyecto.~~ → **Resuelto**:
@@ -220,6 +262,47 @@ ese flujo de caja es 21.65% (verificado de forma independiente: el VAN da
 exactamente 0 en ese punto). Vale la pena tenerlo presente si se revisa ese
 ejemplo del PDF más adelante.
 
-Siguiente decisión: elegir si se arma el Tier 2 (CAPM, impacto del TER,
-apalancamiento) y/o Tier 3 (demos de opciones y bonos) para el Tema 1, o si
-se pasa directo al Tema 2 (Finanzas personales y gestión del riesgo).
+Siguiente decisión (Tema 1): elegir si se arma el Tier 2 (CAPM, impacto del
+TER, apalancamiento) y/o Tier 3 (demos de opciones y bonos), o si se pasa al
+Tema 2 (Finanzas personales y gestión del riesgo). Quedó en pausa.
+
+**Tema 8 (Derivados financieros) adelantado fuera de orden**: el usuario
+quiere poder analizar estrategias de opciones (probabilidad de ganar,
+pérdida/beneficio máximo, prima, volatilidad, griegas, liquidez) antes de
+operar con dinero real. Arrancamos por los motores (ver 9.2 para el plan
+completo de motores + estrategias).
+
+**Motor 1 — opciones americanas, completo y validado.** Vive en
+`notebooks/08_derivados_financieros.py`. Precio (árbol binomial
+Cox-Ross-Rubinstein-Merton, con rendimiento por dividendo continuo $q$) y las
+5 griegas (Delta/Gamma/Theta leídas de los nodos del árbol — más estable que
+diferencias finitas externas, que probamos y dieron un Gamma ~3× inflado por
+ruido de discretización del árbol CRR; Vega/Rho por diferencias finitas
+externas, que ahí sí son estables). El notebook enfoca todo en americanas
+(sin comparación con europeas, a pedido del usuario — es lo que de verdad se
+opera): teoría de por qué Black-Scholes es la base pero solo alcanza sola
+cuando nunca conviene ejercer antes, justificación matemática completa del
+árbol (réplica y no arbitraje, probabilidad neutral al riesgo, por qué
+$u=e^{\sigma\sqrt{\Delta t}}$, ejercicio anticipado como parada óptima),
+ejemplo numérico de referencia, 6 sliders (S, K, días, r, q, σ), tabla de
+prima/griegas call vs. put, gráfico de prima vs. payoff con la zona de
+ejercicio anticipado sombreada (detectada automáticamente comparando prima
+contra valor intrínseco), panel de sensibilidad de las 4 griegas, y
+conclusión en lenguaje simple.
+
+Validado en varios frentes: call ATM sin dividendos ≈ Black-Scholes (Delta
+0.6367 vs. 0.6368, Gamma 0.0188 vs. 0.01876, Theta/día -0.0176 vs. -0.0176);
+put muy ITM (S=60/K=100) da Delta=-1 y Gamma=0 exactos (zona de ejercicio
+inmediato); con dividendo (q=4%) la call también empieza a valer más que su
+versión sin ejercicio anticipado, confirmando la regla del PDF del curso
+(`M8_derivados_financieros/`, sección 4.7). `src/formulas.py` suma:
+`precio_binomial_call_americana`, `precio_binomial_put_americana`,
+`delta_call_americana`, `delta_put_americana`, `gamma_call_americana`,
+`gamma_put_americana`, `theta_call_americana`, `theta_put_americana`,
+`vega_call_americana`, `vega_put_americana`, `rho_call_americana`,
+`rho_put_americana` (más las fórmulas europeas de Black-Scholes y el
+binomial europeo, sin usar por el notebook pero validadas y disponibles para
+más adelante). Dependencia nueva: `scipy` (`norm.cdf`/`norm.pdf`).
+
+Siguiente decisión (Tema 8): construir el Motor 2 (volatilidad histórica vs.
+implícita) o el Motor 3 (probabilidad/distribución al vencimiento).

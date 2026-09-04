@@ -1,5 +1,8 @@
+import math
+
 import numpy_financial as npf
 import pandas as pd
+from scipy.stats import norm
 
 
 def interes_simple(capital: float, tasa: float, periodos: int) -> float:
@@ -96,3 +99,214 @@ def van(flujos: list[float], tasa_descuento: float) -> float:
 
 def tir(flujos: list[float]) -> float:
     return npf.irr(flujos)
+
+
+def _d1(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    return (math.log(s / k) + (r + sigma**2 / 2) * t) / (sigma * math.sqrt(t))
+
+
+def _d2(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    return _d1(s, k, t, r, sigma) - sigma * math.sqrt(t)
+
+
+def precio_call(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d1 = _d1(s, k, t, r, sigma)
+    d2 = _d2(s, k, t, r, sigma)
+    return s * norm.cdf(d1) - k * math.exp(-r * t) * norm.cdf(d2)
+
+
+def precio_put(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d1 = _d1(s, k, t, r, sigma)
+    d2 = _d2(s, k, t, r, sigma)
+    return k * math.exp(-r * t) * norm.cdf(-d2) - s * norm.cdf(-d1)
+
+
+def delta_call(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    return norm.cdf(_d1(s, k, t, r, sigma))
+
+
+def delta_put(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    return norm.cdf(_d1(s, k, t, r, sigma)) - 1
+
+
+def gamma(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d1 = _d1(s, k, t, r, sigma)
+    return norm.pdf(d1) / (s * sigma * math.sqrt(t))
+
+
+def vega(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d1 = _d1(s, k, t, r, sigma)
+    return s * norm.pdf(d1) * math.sqrt(t)
+
+
+def theta_call(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d1 = _d1(s, k, t, r, sigma)
+    d2 = _d2(s, k, t, r, sigma)
+    return -(s * norm.pdf(d1) * sigma) / (2 * math.sqrt(t)) - r * k * math.exp(-r * t) * norm.cdf(d2)
+
+
+def theta_put(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d1 = _d1(s, k, t, r, sigma)
+    d2 = _d2(s, k, t, r, sigma)
+    return -(s * norm.pdf(d1) * sigma) / (2 * math.sqrt(t)) + r * k * math.exp(-r * t) * norm.cdf(-d2)
+
+
+def rho_call(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d2 = _d2(s, k, t, r, sigma)
+    return k * t * math.exp(-r * t) * norm.cdf(d2)
+
+
+def rho_put(s: float, k: float, t: float, r: float, sigma: float) -> float:
+    d2 = _d2(s, k, t, r, sigma)
+    return -k * t * math.exp(-r * t) * norm.cdf(-d2)
+
+
+def _binomial(
+    s: float,
+    k: float,
+    t: float,
+    r: float,
+    q: float,
+    sigma: float,
+    n: int,
+    es_call: bool,
+    es_americana: bool,
+) -> float:
+    dt = t / n
+    u = math.exp(sigma * math.sqrt(dt))
+    d = 1 / u
+    p = (math.exp((r - q) * dt) - d) / (u - d)
+    descuento = math.exp(-r * dt)
+
+    valores = []
+    for j in range(n + 1):
+        precio = s * u**j * d ** (n - j)
+        valores.append(max(precio - k, 0) if es_call else max(k - precio, 0))
+
+    for paso in range(n - 1, -1, -1):
+        for j in range(paso + 1):
+            valores[j] = descuento * (p * valores[j + 1] + (1 - p) * valores[j])
+            if es_americana:
+                precio = s * u**j * d ** (paso - j)
+                ejercicio = precio - k if es_call else k - precio
+                valores[j] = max(valores[j], ejercicio)
+
+    return valores[0]
+
+
+def precio_binomial_call_europea(
+    s: float, k: float, t: float, r: float, q: float, sigma: float, n: int
+) -> float:
+    return _binomial(s, k, t, r, q, sigma, n, es_call=True, es_americana=False)
+
+
+def precio_binomial_put_europea(
+    s: float, k: float, t: float, r: float, q: float, sigma: float, n: int
+) -> float:
+    return _binomial(s, k, t, r, q, sigma, n, es_call=False, es_americana=False)
+
+
+def precio_binomial_call_americana(
+    s: float, k: float, t: float, r: float, q: float, sigma: float, n: int
+) -> float:
+    return _binomial(s, k, t, r, q, sigma, n, es_call=True, es_americana=True)
+
+
+def precio_binomial_put_americana(
+    s: float, k: float, t: float, r: float, q: float, sigma: float, n: int
+) -> float:
+    return _binomial(s, k, t, r, q, sigma, n, es_call=False, es_americana=True)
+
+
+def _binomial_griegas(
+    s: float, k: float, t: float, r: float, q: float, sigma: float, n: int, es_call: bool
+) -> tuple[float, float, float, float]:
+    # delta/gamma/theta se leen de los nodos vecinos del árbol, no por diferencias
+    # finitas externas: bumpear S y volver a montar el árbol da un gamma ~3x
+    # inflado (ruido de discretización de CRR), este método es el estable.
+    dt = t / n
+    u = math.exp(sigma * math.sqrt(dt))
+    d = 1 / u
+    p = (math.exp((r - q) * dt) - d) / (u - d)
+    descuento = math.exp(-r * dt)
+
+    valores = []
+    for j in range(n + 1):
+        precio = s * u**j * d ** (n - j)
+        valores.append(max(precio - k, 0) if es_call else max(k - precio, 0))
+
+    for paso in range(n - 1, -1, -1):
+        for j in range(paso + 1):
+            valores[j] = descuento * (p * valores[j + 1] + (1 - p) * valores[j])
+            precio_nodo = s * u**j * d ** (paso - j)
+            ejercicio = precio_nodo - k if es_call else k - precio_nodo
+            valores[j] = max(valores[j], ejercicio)
+        if paso == 2:
+            f_dd, f_ud, f_uu = valores[0], valores[1], valores[2]
+        elif paso == 1:
+            f_d, f_u = valores[0], valores[1]
+
+    f_0 = valores[0]
+    delta = (f_u - f_d) / (s * u - s * d)
+    delta_arriba = (f_uu - f_ud) / (s * u**2 - s)
+    delta_abajo = (f_ud - f_dd) / (s - s * d**2)
+    gamma = (delta_arriba - delta_abajo) / (0.5 * (s * u**2 - s * d**2))
+    theta = (f_ud - f_0) / (2 * dt)
+
+    return f_0, delta, gamma, theta
+
+
+def delta_call_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    return _binomial_griegas(s, k, t, r, q, sigma, n, es_call=True)[1]
+
+
+def delta_put_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    return _binomial_griegas(s, k, t, r, q, sigma, n, es_call=False)[1]
+
+
+def gamma_call_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    return _binomial_griegas(s, k, t, r, q, sigma, n, es_call=True)[2]
+
+
+def gamma_put_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    return _binomial_griegas(s, k, t, r, q, sigma, n, es_call=False)[2]
+
+
+def theta_call_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    return _binomial_griegas(s, k, t, r, q, sigma, n, es_call=True)[3]
+
+
+def theta_put_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    return _binomial_griegas(s, k, t, r, q, sigma, n, es_call=False)[3]
+
+
+def vega_call_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    h = 0.001
+    return (
+        _binomial(s, k, t, r, q, sigma + h, n, es_call=True, es_americana=True)
+        - _binomial(s, k, t, r, q, sigma - h, n, es_call=True, es_americana=True)
+    ) / (2 * h)
+
+
+def vega_put_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    h = 0.001
+    return (
+        _binomial(s, k, t, r, q, sigma + h, n, es_call=False, es_americana=True)
+        - _binomial(s, k, t, r, q, sigma - h, n, es_call=False, es_americana=True)
+    ) / (2 * h)
+
+
+def rho_call_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    h = 0.0001
+    return (
+        _binomial(s, k, t, r + h, q, sigma, n, es_call=True, es_americana=True)
+        - _binomial(s, k, t, r - h, q, sigma, n, es_call=True, es_americana=True)
+    ) / (2 * h)
+
+
+def rho_put_americana(s: float, k: float, t: float, r: float, q: float, sigma: float, n: int) -> float:
+    h = 0.0001
+    return (
+        _binomial(s, k, t, r + h, q, sigma, n, es_call=False, es_americana=True)
+        - _binomial(s, k, t, r - h, q, sigma, n, es_call=False, es_americana=True)
+    ) / (2 * h)
