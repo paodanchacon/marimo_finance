@@ -1,3 +1,44 @@
+# Bitácora
+
+## 2026-09-04 (4) — Tema 8: Motor 2 - volatilidad histórica vs. implícita
+
+- Al revisar el archivo para esta entrada noté que el encabezado `# Bitácora`
+  se había perdido en algún commit anterior de esta sesión — lo repuse acá.
+- Empecé por trackear `M8_derivados_financieros/08_derivados_financieros.pdf`
+  en git (igual que el PDF de M1) y commiteé aparte todo el Motor 1
+  (formulas.py + notebook + GUIA/log), que venía acumulado sin commitear.
+- Arranqué el Motor 2. Volatilidad histórica: `simular_precios_gbm` (camino
+  de precio sintético vía movimiento browniano geométrico, con semilla para
+  poder repetir/variar la muestra) + `volatilidad_historica` (desviación
+  estándar anualizada de retornos logarítmicos). Validé que con pocas
+  observaciones (30-90 días) la estimación es ruidosa (0.30 verdadera →
+  ~0.23-0.28 estimada) y con muchas (2000 días) converge de cerca (~0.30) —
+  el punto pedagógico central de esta sub-herramienta.
+- Volatilidad implícita: en vez de invertir Black-Scholes, la despejo por
+  bisección sobre el árbol binomial americano (consistente con el resto del
+  motor, que ya no usa Black-Scholes en el notebook). Validé con round-trip:
+  genero un precio a un σ conocido (0.15, 0.25, 0.50, 0.80) y la bisección
+  lo recupera exacto en los 4 casos.
+- Encontré un caso límite real al validar con una put muy ITM: el precio no
+  depende de σ en la zona de ejercicio anticipado (Vega≈0 ahí, ya lo
+  sabíamos del Motor 1), así que la bisección converge a un número sin
+  sentido (0.001, el límite inferior del rango de búsqueda) en vez de una IV
+  real. Agregué una detección explícita en el notebook (precio de mercado ≈
+  valor intrínseco → avisa que la IV no está definida, en vez de mostrar el
+  número falso).
+- Al escribir el notebook cometí un error real de marimo: puse `mo.md(...)`
+  separado dentro de cada rama de un `if/else` en vez de armar el texto y
+  mostrarlo una sola vez al final — `marimo check` lo marcó como
+  `branch-expression` (la salida de esas ramas no se muestra). Lo corregí
+  armando `texto_iv` en cada rama y llamando a `mo.md(texto_iv)` una sola
+  vez, como ya veníamos haciendo en el resto del notebook.
+- Notebook: agregué teoría (histórica vs. implícita, por qué se invierte el
+  árbol y no Black-Scholes, el límite de Vega≈0), 3 sliders + gráfico para
+  la parte histórica, 5 sliders + dropdown + gráfico (curva del precio del
+  modelo vs. σ, cruzando el precio de mercado) para la parte implícita.
+- Verificado con `marimo check` (0 issues tras la corrección) y
+  `marimo export html` sin errores.
+
 ## 2026-09-04 (3) — Tema 8: sombrear la zona de ejercicio anticipado
 
 - El usuario preguntó cómo ver, en el gráfico, dónde conviene ejercer la put

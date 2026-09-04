@@ -25,10 +25,14 @@ def _():
         precio_binomial_put_americana,
         rho_call_americana,
         rho_put_americana,
+        simular_precios_gbm,
         theta_call_americana,
         theta_put_americana,
         vega_call_americana,
         vega_put_americana,
+        volatilidad_historica,
+        volatilidad_implicita_call_americana,
+        volatilidad_implicita_put_americana,
     )
 
     return (
@@ -44,10 +48,14 @@ def _():
         precio_binomial_put_americana,
         rho_call_americana,
         rho_put_americana,
+        simular_precios_gbm,
         theta_call_americana,
         theta_put_americana,
         vega_call_americana,
         vega_put_americana,
+        volatilidad_historica,
+        volatilidad_implicita_call_americana,
+        volatilidad_implicita_put_americana,
     )
 
 
@@ -690,6 +698,278 @@ def _(
         - {nota_put}
         """
     )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Motor 2: volatilidad histórica vs. implícita
+
+    Hasta acá, la volatilidad ($\sigma$) era un slider que vos ponías a mano.
+    En la práctica es el dato más difícil de conseguir — nadie te la dice,
+    hay que estimarla. Hay dos formas completamente distintas de hacerlo, y
+    dan números distintos.
+
+    **Volatilidad histórica (o realizada)**: mirar hacia atrás. Se toma una
+    serie de precios pasados, se calculan los retornos logarítmicos día a
+    día y se anualiza su desviación estándar:
+
+    $$\sigma_{\text{hist}} = \text{std}(r_1,\ldots,r_n) \times \sqrt{365}, \qquad r_i = \ln\frac{P_i}{P_{i-1}}$$
+
+    Es un dato objetivo (sale de precios que ya pasaron), pero es una
+    **estimación**: con pocos datos, el número que sale puede estar bastante
+    lejos del verdadero, simplemente por azar de la muestra.
+
+    **Volatilidad implícita**: mirar hacia adelante, al revés. En vez de
+    partir de precios y sacar una prima, partimos de una prima real que
+    cotiza el mercado y preguntamos: ¿qué $\sigma$ tendría que usar el
+    modelo para llegar justo a ese precio? Es la volatilidad que el mercado
+    está "pagando" por la opción ahora mismo.
+
+    Como este notebook usa el árbol binomial (no Black-Scholes) para las
+    americanas, la volatilidad implícita se despeja **volviendo a montar el
+    árbol muchas veces**, probando distintos $\sigma$ por **bisección**: se
+    prueba el punto medio de un rango, y según si el precio del modelo queda
+    por arriba o por debajo del de mercado, se descarta la mitad del rango
+    que ya no puede contener la respuesta, y se repite.
+
+    **Un límite importante**: en la zona de ejercicio anticipado que vimos
+    en el Motor 1 (donde la prima ya es exactamente el valor intrínseco), el
+    precio **no depende de la volatilidad** — ahí la Vega es prácticamente
+    0, así que no hay ninguna volatilidad "correcta" que despejar: cualquier
+    $\sigma$ da el mismo precio. Este motor detecta ese caso y avisa, en vez
+    de devolver un número sin sentido.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Volatilidad histórica: qué tan bien se estima con pocos datos
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    sigma_verdadera_slider = mo.ui.slider(
+        start=0.05, stop=1.0, step=0.01, value=0.30, label="Volatilidad verdadera (σ)",
+        show_value=True,
+    )
+    dias_historial_slider = mo.ui.slider(
+        start=10, stop=1000, step=10, value=90, label="Días de historial simulados",
+        show_value=True,
+    )
+    semilla_slider = mo.ui.slider(
+        start=0, stop=1000, step=1, value=42, label="Semilla (para repetir/variar la muestra)",
+        show_value=True,
+    )
+    mo.hstack([sigma_verdadera_slider, dias_historial_slider, semilla_slider])
+    return dias_historial_slider, semilla_slider, sigma_verdadera_slider
+
+
+@app.cell
+def _(
+    dias_historial_slider,
+    go,
+    np,
+    semilla_slider,
+    sigma_verdadera_slider,
+    simular_precios_gbm,
+    volatilidad_historica,
+):
+    precios_simulados = simular_precios_gbm(
+        100, 0.0, sigma_verdadera_slider.value, dias_historial_slider.value, semilla_slider.value
+    )
+    vol_estimada = volatilidad_historica(precios_simulados, 365)
+
+    fig_precios = go.Figure()
+    fig_precios.add_trace(
+        go.Scatter(x=np.arange(len(precios_simulados)), y=precios_simulados, mode="lines")
+    )
+    fig_precios.update_layout(
+        title="Camino de precio simulado (movimiento browniano geométrico)",
+        xaxis_title="Día",
+        yaxis_title="Precio ($)",
+    )
+    fig_precios
+    return (vol_estimada,)
+
+
+@app.cell
+def _(dias_historial_slider, mo, sigma_verdadera_slider, vol_estimada):
+    diferencia_vol = vol_estimada - sigma_verdadera_slider.value
+
+    mo.md(
+        f"""
+        Con **{dias_historial_slider.value} días** de historial simulados a partir de
+        una volatilidad verdadera del **{sigma_verdadera_slider.value:.1%}**:
+
+        - Volatilidad histórica estimada: **{vol_estimada:.1%}**
+        - Diferencia respecto a la verdadera: **{diferencia_vol:+.1%}**
+
+        Con pocos días, esta estimación puede alejarse bastante del valor
+        verdadero (probá bajar el slider de días a 30 y cambiar la semilla
+        varias veces — vas a ver el número saltar). Con más días, la
+        estimación se estabiliza y se acerca — es el mismo fenómeno de
+        cualquier muestra estadística: a más datos, menos ruido.
+        """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Volatilidad implícita: qué está pagando el mercado ahora
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    s_iv_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Precio subyacente S ($)")
+    k_iv_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Strike K ($)")
+    dias_iv_slider = mo.ui.slider(
+        start=1, stop=365, step=1, value=30, label="Días a vencimiento", show_value=True
+    )
+    r_iv_slider = mo.ui.slider(
+        start=0.0, stop=0.10, step=0.0025, value=0.04, label="Tasa libre de riesgo",
+        show_value=True,
+    )
+    precio_mercado_slider = mo.ui.number(
+        start=0.01, stop=200.0, step=0.01, value=3.02, label="Precio de mercado observado ($)"
+    )
+    tipo_iv_dropdown = mo.ui.dropdown(
+        options={"Call": "call", "Put": "put"}, value="Call", label="Tipo de opción"
+    )
+    mo.vstack(
+        [
+            mo.hstack([s_iv_slider, k_iv_slider, dias_iv_slider]),
+            mo.hstack([r_iv_slider, precio_mercado_slider, tipo_iv_dropdown]),
+        ]
+    )
+    return (
+        dias_iv_slider,
+        k_iv_slider,
+        precio_mercado_slider,
+        r_iv_slider,
+        s_iv_slider,
+        tipo_iv_dropdown,
+    )
+
+
+@app.cell
+def _(
+    dias_iv_slider,
+    k_iv_slider,
+    mo,
+    precio_mercado_slider,
+    r_iv_slider,
+    s_iv_slider,
+    tipo_iv_dropdown,
+    volatilidad_implicita_call_americana,
+    volatilidad_implicita_put_americana,
+):
+    n_pasos_iv = 150
+
+    s_valor_iv = s_iv_slider.value
+    k_valor_iv = k_iv_slider.value
+    t_valor_iv = dias_iv_slider.value / 365
+    r_valor_iv = r_iv_slider.value
+    precio_mercado_valor = precio_mercado_slider.value
+    tipo_iv = tipo_iv_dropdown.value
+
+    valor_intrinseco_iv = (
+        max(k_valor_iv - s_valor_iv, 0) if tipo_iv == "put" else max(s_valor_iv - k_valor_iv, 0)
+    )
+    en_zona_degenerada = (precio_mercado_valor - valor_intrinseco_iv) <= 0.02
+
+    if en_zona_degenerada:
+        iv_valor = None
+        texto_iv = (
+            f"""
+            El precio de mercado ingresado (**{precio_mercado_valor:,.2f} $**) es
+            prácticamente igual al valor intrínseco (**{valor_intrinseco_iv:,.2f} $**)
+            de esta opción — está en la zona de ejercicio anticipado. Ahí la Vega es
+            ≈0, así que **la volatilidad implícita no está definida**: cualquier σ da
+            (casi) el mismo precio. Subí el precio de mercado o alejá el strike del
+            subyacente para salir de esta zona.
+            """
+        )
+    else:
+        if tipo_iv == "put":
+            iv_valor = volatilidad_implicita_put_americana(
+                precio_mercado_valor, s_valor_iv, k_valor_iv, t_valor_iv, r_valor_iv, 0.0, n_pasos_iv
+            )
+        else:
+            iv_valor = volatilidad_implicita_call_americana(
+                precio_mercado_valor, s_valor_iv, k_valor_iv, t_valor_iv, r_valor_iv, 0.0, n_pasos_iv
+            )
+        texto_iv = (
+            f"""
+            | | |
+            |---|---|
+            | Precio de mercado | {precio_mercado_valor:,.2f} $ |
+            | Volatilidad implícita | **{iv_valor:.2%}** |
+
+            Es decir: para que el árbol binomial reproduzca ese precio de
+            {precio_mercado_valor:,.2f} $ (con S={s_valor_iv:,.0f}, K={k_valor_iv:,.0f},
+            {dias_iv_slider.value} días), el mercado está "pagando" una volatilidad del
+            {iv_valor:.2%} anual — sin importar cuál sea la volatilidad histórica del
+            subyacente.
+            """
+        )
+    mo.md(texto_iv)
+    return en_zona_degenerada, iv_valor, precio_mercado_valor, tipo_iv
+
+
+@app.cell
+def _(
+    en_zona_degenerada,
+    go,
+    iv_valor,
+    k_valor_iv,
+    n_pasos_iv,
+    np,
+    precio_binomial_call_americana,
+    precio_binomial_put_americana,
+    precio_mercado_valor,
+    r_valor_iv,
+    s_valor_iv,
+    t_valor_iv,
+    tipo_iv,
+):
+    sigma_rango = np.linspace(0.01, 1.5, 80)
+    precio_fn = precio_binomial_put_americana if tipo_iv == "put" else precio_binomial_call_americana
+    curva_precio_modelo = [
+        precio_fn(s_valor_iv, k_valor_iv, t_valor_iv, r_valor_iv, 0.0, sigma, n_pasos_iv)
+        for sigma in sigma_rango
+    ]
+
+    fig_iv = go.Figure()
+    fig_iv.add_trace(
+        go.Scatter(x=sigma_rango, y=curva_precio_modelo, mode="lines", name="Precio del modelo")
+    )
+    fig_iv.add_hline(
+        y=precio_mercado_valor, line_dash="dot", annotation_text="Precio de mercado",
+        annotation_position="top left",
+    )
+    if not en_zona_degenerada:
+        fig_iv.add_vline(
+            x=iv_valor, line_dash="dash", line_color="gray",
+            annotation_text=f"IV = {iv_valor:.1%}", annotation_position="top right",
+        )
+    fig_iv.update_layout(
+        title="Cómo se despeja la volatilidad implícita: dónde el precio del modelo cruza al de mercado",
+        xaxis_title="Volatilidad (σ)",
+        yaxis_title="Precio del modelo ($)",
+    )
+    fig_iv
     return
 
 

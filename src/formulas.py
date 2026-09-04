@@ -1,5 +1,6 @@
 import math
 
+import numpy as np
 import numpy_financial as npf
 import pandas as pd
 from scipy.stats import norm
@@ -310,3 +311,48 @@ def rho_put_americana(s: float, k: float, t: float, r: float, q: float, sigma: f
         _binomial(s, k, t, r + h, q, sigma, n, es_call=False, es_americana=True)
         - _binomial(s, k, t, r - h, q, sigma, n, es_call=False, es_americana=True)
     ) / (2 * h)
+
+
+def simular_precios_gbm(precio_inicial: float, mu: float, sigma: float, dias: int, semilla: int) -> list[float]:
+    rng = np.random.default_rng(semilla)
+    dt = 1 / 365
+    precios = [precio_inicial]
+    for _ in range(dias):
+        z = rng.standard_normal()
+        siguiente = precios[-1] * math.exp((mu - sigma**2 / 2) * dt + sigma * math.sqrt(dt) * z)
+        precios.append(siguiente)
+    return precios
+
+
+def volatilidad_historica(precios: list[float], periodos_por_anio: float) -> float:
+    precios_arr = np.array(precios)
+    log_retornos = np.log(precios_arr[1:] / precios_arr[:-1])
+    return float(log_retornos.std(ddof=1) * math.sqrt(periodos_por_anio))
+
+
+def volatilidad_implicita_call_americana(
+    precio_mercado: float, s: float, k: float, t: float, r: float, q: float, n: int
+) -> float:
+    sigma_baja, sigma_alta = 0.001, 5.0
+    for _ in range(60):
+        sigma_media = (sigma_baja + sigma_alta) / 2
+        precio_modelo = precio_binomial_call_americana(s, k, t, r, q, sigma_media, n)
+        if precio_modelo < precio_mercado:
+            sigma_baja = sigma_media
+        else:
+            sigma_alta = sigma_media
+    return sigma_media
+
+
+def volatilidad_implicita_put_americana(
+    precio_mercado: float, s: float, k: float, t: float, r: float, q: float, n: int
+) -> float:
+    sigma_baja, sigma_alta = 0.001, 5.0
+    for _ in range(60):
+        sigma_media = (sigma_baja + sigma_alta) / 2
+        precio_modelo = precio_binomial_put_americana(s, k, t, r, q, sigma_media, n)
+        if precio_modelo < precio_mercado:
+            sigma_baja = sigma_media
+        else:
+            sigma_alta = sigma_media
+    return sigma_media

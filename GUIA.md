@@ -202,7 +202,7 @@ estrategia por estrategia, cada una como su propia sub-sección.
 | # | Motor | Qué resuelve | Fórmulas (`formulas.py`) | Estado |
 |---|---|---|---|---|
 | 1 | Opciones americanas (árbol binomial CRR-Merton, con dividendo q) | Prima + las 5 griegas (Delta, Gamma, Theta, Vega, Rho) para call y put americanas dado S, K, T, r, q, σ. Delta/Gamma/Theta se leen de los nodos del árbol (más estable que diferencias finitas externas); Vega/Rho por rearmado del árbol con el parámetro bumpeado | `precio_binomial_call_americana`, `precio_binomial_put_americana`, `delta_call_americana`, `delta_put_americana`, `gamma_call_americana`, `gamma_put_americana`, `theta_call_americana`, `theta_put_americana`, `vega_call_americana`, `vega_put_americana`, `rho_call_americana`, `rho_put_americana` | ✅ Implementado |
-| 2 | Volatilidad histórica vs. implícita | Vol. histórica desde una serie de precios vs. vol. implícita despejada de un precio de mercado real (inversión numérica de Black-Scholes) | 🔲 A definir | 🔲 Pendiente |
+| 2 | Volatilidad histórica vs. implícita | Vol. histórica desde una serie de precios (simulados vía GBM) vs. vol. implícita despejada por bisección sobre el árbol binomial americano; detecta y avisa cuando la IV no está definida (zona de ejercicio anticipado, Vega≈0) | `simular_precios_gbm`, `volatilidad_historica`, `volatilidad_implicita_call_americana`, `volatilidad_implicita_put_americana` | ✅ Implementado |
 | 3 | Probabilidad y distribución del subyacente al vencimiento | Con σ y T, modela dónde puede terminar el precio (lognormal) para sacar prob. de ITM y prob. de beneficio real de una estrategia (considerando la prima pagada) | 🔲 A definir | 🔲 Pendiente |
 
 Nota: el notebook del Motor 1 solo muestra opciones americanas (a pedido del
@@ -304,5 +304,32 @@ versión sin ejercicio anticipado, confirmando la regla del PDF del curso
 binomial europeo, sin usar por el notebook pero validadas y disponibles para
 más adelante). Dependencia nueva: `scipy` (`norm.cdf`/`norm.pdf`).
 
-Siguiente decisión (Tema 8): construir el Motor 2 (volatilidad histórica vs.
-implícita) o el Motor 3 (probabilidad/distribución al vencimiento).
+**Motor 2 — volatilidad histórica vs. implícita, completo y validado.**
+Misma sección del notebook, agregado después de Motor 1. Dos sub-partes:
+
+- *Histórica*: `simular_precios_gbm` genera un camino de precio sintético
+  (movimiento browniano geométrico) a partir de una $\sigma$ "verdadera"
+  elegida por slider, y `volatilidad_historica` mide la desviación estándar
+  anualizada de los retornos logarítmicos de esa muestra. Validado: con
+  pocos días (30-90) la estimación es ruidosa (ej. 0.30 verdadera → ~0.23
+  estimada); con muchos días (2000) converge de cerca (~0.30) — el punto
+  pedagógico es que la vol. histórica es una *estimación* con ruido de
+  muestra, no un dato exacto.
+- *Implícita*: se despeja por bisección sobre el árbol binomial americano
+  (no sobre Black-Scholes, para ser consistente con el resto del motor) —
+  se prueba un $\sigma$, se compara el precio del árbol contra el precio de
+  mercado ingresado, y se descarta la mitad del rango que no puede contener
+  la respuesta. Validado con round-trip (generar un precio a un $\sigma$
+  conocido y recuperarlo: 0.15/0.25/0.50/0.80 → recuperados exactos).
+  Encontramos un caso límite real: en la zona de ejercicio anticipado
+  (put muy ITM) el precio no depende de $\sigma$ (Vega≈0), así que la
+  bisección converge a un número sin sentido — el notebook detecta esto
+  (precio de mercado ≈ valor intrínseco) y avisa en vez de mostrar una IV
+  falsa.
+
+`src/formulas.py` suma: `simular_precios_gbm`, `volatilidad_historica`,
+`volatilidad_implicita_call_americana`, `volatilidad_implicita_put_americana`.
+Sin dependencias nuevas (usa `numpy`, ya en el proyecto).
+
+Siguiente decisión (Tema 8): construir el Motor 3 (probabilidad/distribución
+del subyacente al vencimiento).
