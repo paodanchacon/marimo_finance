@@ -219,7 +219,7 @@ no los importa.
 
 | Tier | Estrategias | Estado |
 |---|---|---|
-| 1 — direccionales simples | Long Call, Long Put, Covered Call, Cash-Secured Put, Protective Put | 🔲 Pendiente |
+| 1 — direccionales simples | Long Call, Long Put, Covered Call, Cash-Secured Put, Protective Put | ✅ Implementado (comparador único, ver detalle en Estado actual) |
 | 2 — spreads verticales | Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread | 🔲 Pendiente |
 | 3 — volatilidad/neutrales | Straddle, Strangle, Iron Condor, Butterfly, Calendar Spread | 🔲 Pendiente |
 
@@ -358,8 +358,25 @@ de beneficio sombreadas (call y put), conclusión en lenguaje simple.
 `src/formulas.py` suma: `prob_mayor_a_vencimiento`, `densidad_precio_terminal`
 (validada: integra a 1.0). Sin dependencias nuevas.
 
-Con esto, los 3 motores del Tema 8 (ver 9.2) están completos. Siguiente
-decisión (Tema 8): empezar con las herramientas de estrategia (Tier 1 —
-direccionales simples: Long Call, Long Put, Covered Call, Cash-Secured Put,
-Protective Put) que consumen estos 3 motores, o construir primero la pieza
-de liquidez (C).
+Con esto, los 3 motores del Tema 8 (ver 9.2) están completos.
+
+**Tier 1 de estrategias (direccionales simples), completo y validado.**
+En vez de 5 secciones casi idénticas repitiendo los mismos sliders, se armó
+un comparador único: Long Call, Long Put, Covered Call, Cash-Secured Put y
+Protective Put evaluadas bajo el mismo escenario (S, K, días, r, σ y la
+expectativa de retorno propia μ), consumiendo el Motor 1 (prima) y el
+Motor 3 (probabilidad de beneficio). Las 5 fórmulas de payoff neto
+(`payoff_neto_long_call`, `payoff_neto_long_put`, `payoff_neto_covered_call`,
+`payoff_neto_cash_secured_put`, `payoff_neto_protective_put`) se validaron
+a mano contra los valores esperados de máximo beneficio, máxima pérdida y
+breakeven de cada estrategia, con resultado exacto en los 5 casos. Notebook:
+teoría de las 5 estrategias, 6 sliders, tabla comparativa (prima, máx.
+beneficio, máx. pérdida, breakeven, probabilidad de beneficio), gráfico de
+P&L superpuesto de las 5 curvas, y una conclusión que señala la
+equivalencia aproximada entre Covered Call y Cash-Secured Put por paridad
+put-call.
+
+Siguiente decisión (Tema 8): Tier 2 de estrategias (spreads verticales:
+Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread),
+Tier 3 (volatilidad/neutrales: Straddle, Strangle, Iron Condor, Butterfly,
+Calendar Spread), o la pieza de liquidez (C).

@@ -22,6 +22,11 @@ def _():
         densidad_precio_terminal,
         gamma_call_americana,
         gamma_put_americana,
+        payoff_neto_cash_secured_put,
+        payoff_neto_covered_call,
+        payoff_neto_long_call,
+        payoff_neto_long_put,
+        payoff_neto_protective_put,
         precio_binomial_call_americana,
         precio_binomial_put_americana,
         prob_mayor_a_vencimiento,
@@ -47,6 +52,11 @@ def _():
         make_subplots,
         mo,
         np,
+        payoff_neto_cash_secured_put,
+        payoff_neto_covered_call,
+        payoff_neto_long_call,
+        payoff_neto_long_put,
+        payoff_neto_protective_put,
         precio_binomial_call_americana,
         precio_binomial_put_americana,
         prob_mayor_a_vencimiento,
@@ -1224,6 +1234,224 @@ def _(
     ganarle al mercado exige una expectativa de retorno genuinamente
     distinta a la que ya está reflejada en el precio.
     """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Herramientas de estrategia: Tier 1, direccionales simples
+
+    Los tres motores anteriores calculan piezas sueltas: prima, griegas,
+    volatilidad, probabilidad. Una estrategia combina esas piezas en una
+    posición concreta. Estas cinco son las más simples: una sola opción (o
+    una opción más la acción), todas con una visión direccional clara.
+
+    - **Long Call** (comprar una call): apuesta alcista. Pérdida limitada a
+      la prima, beneficio ilimitado.
+    - **Long Put** (comprar una put): apuesta bajista. Misma lógica que la
+      call, al revés.
+    - **Covered Call** (tener la acción + vender una call sobre ella):
+      cobrar alquiler por una acción que ya tenés, a cambio de resignar la
+      suba más allá del strike.
+    - **Cash-Secured Put** (vender una put, con el efectivo reservado para
+      comprar si te asignan): cobrás la prima ahora a cambio de
+      comprometerte a comprar la acción a un precio que ya elegiste, si cae
+      hasta ahí.
+    - **Protective Put** (tener la acción + comprar una put): un seguro,
+      pagás una prima para ponerle un piso a las pérdidas de una acción que
+      ya tenés.
+
+    Las cinco se evalúan bajo el mismo escenario (mismo S, K, días, tasa,
+    volatilidad y tu propia expectativa de retorno μ) para poder
+    compararlas de igual a igual. La prima sale del Motor 1 (árbol binomial
+    americano); la probabilidad de beneficio, del Motor 3, con tu μ, no con
+    la neutral al riesgo.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    s4_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Precio subyacente S ($)")
+    k4_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Strike K ($)")
+    dias4_slider = mo.ui.slider(
+        start=1, stop=365, step=1, value=30, label="Días a vencimiento", show_value=True
+    )
+    r4_slider = mo.ui.slider(
+        start=0.0, stop=0.10, step=0.0025, value=0.04, label="Tasa libre de riesgo",
+        show_value=True,
+    )
+    sigma4_slider = mo.ui.slider(
+        start=0.05, stop=1.0, step=0.01, value=0.25, label="Volatilidad anualizada (σ)",
+        show_value=True,
+    )
+    mu4_slider = mo.ui.slider(
+        start=-0.20, stop=0.40, step=0.01, value=0.04,
+        label="Tu expectativa de retorno anual (μ)", show_value=True,
+    )
+    mo.vstack(
+        [
+            mo.hstack([s4_slider, k4_slider, dias4_slider]),
+            mo.hstack([r4_slider, sigma4_slider, mu4_slider]),
+        ]
+    )
+    return dias4_slider, k4_slider, mu4_slider, r4_slider, s4_slider, sigma4_slider
+
+
+@app.cell
+def _(
+    dias4_slider,
+    k4_slider,
+    mo,
+    mu4_slider,
+    precio_binomial_call_americana,
+    precio_binomial_put_americana,
+    prob_mayor_a_vencimiento,
+    r4_slider,
+    s4_slider,
+    sigma4_slider,
+):
+    n_pasos4 = 200
+    q4_valor = 0.0
+
+    s4_valor = s4_slider.value
+    k4_valor = k4_slider.value
+    t4_valor = dias4_slider.value / 365
+    r4_valor = r4_slider.value
+    sigma4_valor = sigma4_slider.value
+    mu4_valor = mu4_slider.value
+
+    prima_call4 = precio_binomial_call_americana(
+        s4_valor, k4_valor, t4_valor, r4_valor, q4_valor, sigma4_valor, n_pasos4
+    )
+    prima_put4 = precio_binomial_put_americana(
+        s4_valor, k4_valor, t4_valor, r4_valor, q4_valor, sigma4_valor, n_pasos4
+    )
+
+    be_long_call = k4_valor + prima_call4
+    be_long_put = k4_valor - prima_put4
+    be_covered_call = s4_valor - prima_call4
+    be_cash_secured_put = k4_valor - prima_put4
+    be_protective_put = s4_valor + prima_put4
+
+    max_perdida_long_call = -prima_call4
+    max_perdida_long_put = -prima_put4
+    max_perdida_covered_call = -(s4_valor - prima_call4)
+    max_perdida_cash_secured_put = -(k4_valor - prima_put4)
+    max_perdida_protective_put = -((s4_valor - k4_valor) + prima_put4)
+
+    max_beneficio_long_put = k4_valor - prima_put4
+    max_beneficio_covered_call = (k4_valor - s4_valor) + prima_call4
+    max_beneficio_cash_secured_put = prima_put4
+
+    prob_long_call = prob_mayor_a_vencimiento(s4_valor, be_long_call, t4_valor, mu4_valor, q4_valor, sigma4_valor)
+    prob_long_put = 1 - prob_mayor_a_vencimiento(
+        s4_valor, be_long_put, t4_valor, mu4_valor, q4_valor, sigma4_valor
+    )
+    prob_covered_call = prob_mayor_a_vencimiento(
+        s4_valor, be_covered_call, t4_valor, mu4_valor, q4_valor, sigma4_valor
+    )
+    prob_cash_secured_put = prob_mayor_a_vencimiento(
+        s4_valor, be_cash_secured_put, t4_valor, mu4_valor, q4_valor, sigma4_valor
+    )
+    prob_protective_put = prob_mayor_a_vencimiento(
+        s4_valor, be_protective_put, t4_valor, mu4_valor, q4_valor, sigma4_valor
+    )
+
+    mo.md(
+        f"""
+        | Estrategia | Prima | Máx. beneficio | Máx. pérdida | Breakeven | Prob. de beneficio |
+        |---|---|---|---|---|---|
+        | Long Call | {prima_call4:,.2f} $ (pagada) | Ilimitado | {max_perdida_long_call:,.2f} $ | {be_long_call:,.2f} $ | {prob_long_call:.1%} |
+        | Long Put | {prima_put4:,.2f} $ (pagada) | {max_beneficio_long_put:,.2f} $ | {max_perdida_long_put:,.2f} $ | {be_long_put:,.2f} $ | {prob_long_put:.1%} |
+        | Covered Call | {prima_call4:,.2f} $ (cobrada) | {max_beneficio_covered_call:,.2f} $ | {max_perdida_covered_call:,.2f} $ | {be_covered_call:,.2f} $ | {prob_covered_call:.1%} |
+        | Cash-Secured Put | {prima_put4:,.2f} $ (cobrada) | {max_beneficio_cash_secured_put:,.2f} $ | {max_perdida_cash_secured_put:,.2f} $ | {be_cash_secured_put:,.2f} $ | {prob_cash_secured_put:.1%} |
+        | Protective Put | {prima_put4:,.2f} $ (pagada) | Ilimitado | {max_perdida_protective_put:,.2f} $ | {be_protective_put:,.2f} $ | {prob_protective_put:.1%} |
+        """
+    )
+    return (
+        be_cash_secured_put,
+        be_covered_call,
+        k4_valor,
+        mu4_valor,
+        prima_call4,
+        prima_put4,
+        s4_valor,
+    )
+
+
+@app.cell
+def _(
+    go,
+    k4_valor,
+    np,
+    payoff_neto_cash_secured_put,
+    payoff_neto_covered_call,
+    payoff_neto_long_call,
+    payoff_neto_long_put,
+    payoff_neto_protective_put,
+    prima_call4,
+    prima_put4,
+    s4_valor,
+):
+    st_rango = np.linspace(max(s4_valor * 0.3, 1), s4_valor * 2, 200)
+    curva_long_call = [payoff_neto_long_call(st, k4_valor, prima_call4) for st in st_rango]
+    curva_long_put = [payoff_neto_long_put(st, k4_valor, prima_put4) for st in st_rango]
+    curva_covered_call = [
+        payoff_neto_covered_call(st, s4_valor, k4_valor, prima_call4) for st in st_rango
+    ]
+    curva_cash_secured_put = [
+        payoff_neto_cash_secured_put(st, k4_valor, prima_put4) for st in st_rango
+    ]
+    curva_protective_put = [
+        payoff_neto_protective_put(st, s4_valor, k4_valor, prima_put4) for st in st_rango
+    ]
+
+    fig_estrategias = go.Figure()
+    fig_estrategias.add_trace(go.Scatter(x=st_rango, y=curva_long_call, mode="lines", name="Long Call"))
+    fig_estrategias.add_trace(go.Scatter(x=st_rango, y=curva_long_put, mode="lines", name="Long Put"))
+    fig_estrategias.add_trace(
+        go.Scatter(x=st_rango, y=curva_covered_call, mode="lines", name="Covered Call")
+    )
+    fig_estrategias.add_trace(
+        go.Scatter(x=st_rango, y=curva_cash_secured_put, mode="lines", name="Cash-Secured Put")
+    )
+    fig_estrategias.add_trace(
+        go.Scatter(x=st_rango, y=curva_protective_put, mode="lines", name="Protective Put")
+    )
+    fig_estrategias.add_hline(y=0, line_dash="dot", line_color="gray")
+    fig_estrategias.add_vline(x=k4_valor, line_dash="dot", annotation_text="Strike (K)")
+    fig_estrategias.update_layout(
+        title="Comparación de P&L al vencimiento, neto de prima",
+        xaxis_title="Precio del subyacente al vencimiento (S_T)",
+        yaxis_title="Ganancia / pérdida neta ($)",
+    )
+    fig_estrategias
+    return
+
+
+@app.cell
+def _(be_cash_secured_put, be_covered_call, mo, mu4_valor):
+    mo.md(
+        f"""
+        Con tu expectativa de retorno del **{mu4_valor:.1%} anual**: las
+        estrategias con beneficio ilimitado (Long Call, Protective Put)
+        tienden a tener menor probabilidad de beneficio que las que cobran
+        prima (Covered Call, Cash-Secured Put). Es el trade-off central de
+        vender opciones, cobrás ahora a cambio de limitar cuánto podés ganar.
+
+        Covered Call y Cash-Secured Put dan breakevens casi idénticos
+        ({be_covered_call:,.2f} $ vs. {be_cash_secured_put:,.2f} $). No es
+        casualidad: están ligadas por la paridad put-call (Bloque 4 del PDF),
+        son casi la misma apuesta económica (cobrar prima a cambio de un
+        tope en la ganancia). La pequeña diferencia que ves es el costo
+        financiero de tener la acción comprada en vez de tener el efectivo
+        aparte.
+        """
+    )
     return
 
 

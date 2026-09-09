@@ -367,3 +367,23 @@ def densidad_precio_terminal(x: float, s: float, t: float, mu: float, q: float, 
     media_log = math.log(s) + (mu - q - sigma**2 / 2) * t
     desvio_log = sigma * math.sqrt(t)
     return norm.pdf((math.log(x) - media_log) / desvio_log) / (x * desvio_log)
+
+
+def payoff_neto_long_call(s_t: float, k: float, prima: float) -> float:
+    return max(s_t - k, 0) - prima
+
+
+def payoff_neto_long_put(s_t: float, k: float, prima: float) -> float:
+    return max(k - s_t, 0) - prima
+
+
+def payoff_neto_covered_call(s_t: float, s0: float, k: float, prima: float) -> float:
+    return (s_t - s0) + prima - max(s_t - k, 0)
+
+
+def payoff_neto_cash_secured_put(s_t: float, k: float, prima: float) -> float:
+    return prima - max(k - s_t, 0)
+
+
+def payoff_neto_protective_put(s_t: float, s0: float, k: float, prima: float) -> float:
+    return (s_t - s0) + max(k - s_t, 0) - prima

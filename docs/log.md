@@ -1,5 +1,34 @@
 # Bitácora
 
+## 2026-09-09 — Tema 8: Tier 1 de estrategias (direccionales simples)
+
+- Retomé la sesión (5 días después) para las herramientas de estrategia.
+  En vez de armar 5 secciones casi idénticas (cada una repitiendo los
+  mismos sliders S, K, días, r, sigma), diseñé un comparador único: las 5
+  estrategias Tier 1 (Long Call, Long Put, Covered Call, Cash-Secured Put,
+  Protective Put) evaluadas bajo el mismo escenario, con una tabla y un
+  gráfico compartidos.
+- Agregué 5 funciones de payoff neto a `formulas.py` (una por estrategia,
+  cada una la resta simple entre el resultado al vencimiento y la prima).
+  Las validé a mano contra los valores esperados de máximo beneficio,
+  máxima pérdida y breakeven en los 5 casos: coinciden exactas.
+- La probabilidad de beneficio de cada estrategia reutiliza directo
+  `prob_mayor_a_vencimiento` del Motor 3, con el breakeven de cada
+  estrategia como umbral (en vez del strike). Todas las estrategias del
+  Tier 1 resultaron con P&L no decreciente en el precio al vencimiento
+  excepto Long Put (no creciente), así que solo esa usa la probabilidad
+  complementaria.
+- Notebook: teoría de las 5 estrategias, 6 sliders compartidos (S, K, días,
+  r, sigma, mi propia expectativa de retorno mu), tabla comparativa,
+  gráfico de P&L superpuesto de las 5 curvas, y una conclusión que señala
+  por qué Covered Call y Cash-Secured Put dan breakevens casi idénticos
+  (paridad put-call, con una pequeña diferencia por el costo financiero de
+  tener la acción comprada en vez del efectivo).
+- Corrí los skills `deslop` y `unslop` sobre el código y la prosa nuevos:
+  el código ya cumplía las reglas sin cambios; en la prosa saqué varios
+  em-dashes y una negrita que no marcaba un término técnico real.
+- Verificado con `marimo check` y `marimo export html` sin errores.
+
 ## 2026-09-04 (5) — Tema 8: Motor 3 - probabilidad de ganar
 
 - Subí todo lo que iba quedando pendiente a GitHub antes de arrancar.
