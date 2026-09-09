@@ -219,7 +219,7 @@ no los importa.
 
 | Tier | Estrategias | Estado |
 |---|---|---|
-| 1 — direccionales simples | Long Call, Long Put, Covered Call, Cash-Secured Put, Protective Put | ✅ Implementado (comparador único, ver detalle en Estado actual) |
+| 1 — direccionales simples | Long Call, Long Put, Covered Call, Buy-Write, Cash-Secured Put, Protective Put, Covered Basket Call (2 acciones) | ✅ Implementado (comparador único + sección aparte de canasta, ver detalle en Estado actual) |
 | 2 — spreads verticales | Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread | 🔲 Pendiente |
 | 3 — volatilidad/neutrales | Straddle, Strangle, Iron Condor, Butterfly, Calendar Spread | 🔲 Pendiente |
 
@@ -375,6 +375,34 @@ beneficio, máx. pérdida, breakeven, probabilidad de beneficio), gráfico de
 P&L superpuesto de las 5 curvas, y una conclusión que señala la
 equivalencia aproximada entre Covered Call y Cash-Secured Put por paridad
 put-call.
+
+**Ampliación del Tier 1: Buy-Write y Covered Basket Call.** A pedido del
+usuario, se agregaron dos estrategias más.
+
+Buy-Write resultó ser una distinción real, no solo un alias de Covered
+Call: se agregó un slider de "precio de compra original" separado del
+precio actual, así que ahora Covered Call usa el costo base real de una
+acción que ya tenías (que puede diferir del precio de hoy) mientras que
+Buy-Write siempre usa el precio actual (comprás y vendés la call en el
+mismo momento). La equivalencia por paridad put-call con Cash-Secured Put
+se corrigió para compararse contra Buy-Write, que es el caso al que
+realmente aplica esa relación.
+
+Covered Basket Call extiende el Covered Call a dos acciones distintas a la
+vez. El máximo beneficio y la máxima pérdida siguen siendo una suma
+determinística de cada posición, pero la probabilidad de beneficio de la
+canasta ya depende de cómo se mueven las dos acciones juntas, así que deja
+de haber una fórmula cerrada tipo $N(d_2)$. Se resuelve con Monte Carlo:
+`simular_precios_correlacionados` genera escenarios conjuntos de las dos
+acciones con un modelo de un factor (`src/formulas.py`), con un dropdown
+para elegir entre correlación 0 o 0.7. Validado: con 50.000 simulaciones,
+la correlación implícita en los escenarios coincide con la elegida
+(0.009 y 0.701 contra los objetivos 0 y 0.7), y el máximo simulado
+coincide exacto con el máximo beneficio calculado analíticamente. Notebook
+con teoría de por qué hace falta simulación, 8 sliders (S₁, K₁, S₂, K₂,
+días, r, σ, μ) más el dropdown de correlación, tabla comparativa por
+acción y de la canasta completa, e histograma del P&L simulado de la
+canasta con las zonas de beneficio y pérdida coloreadas.
 
 Siguiente decisión (Tema 8): Tier 2 de estrategias (spreads verticales:
 Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread),

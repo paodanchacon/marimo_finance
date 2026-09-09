@@ -1,5 +1,37 @@
 # Bitácora
 
+## 2026-09-09 (2) — Tema 8: Buy-Write y Covered Basket Call
+
+- El usuario pidió agregar Buy-Write y Covered Basket Call al comparador de
+  estrategias. Antes de tocar código pregunté qué significaba cada término
+  para evitar construir algo distinto de lo que quería: Buy-Write como fila
+  aparte (no fusionada con Covered Call) y Basket Call como covered call
+  sobre varias acciones distintas a la vez.
+- Buy-Write terminó siendo una distinción real y no solo un alias. Agregué
+  un slider de costo base separado del precio actual: Covered Call ahora
+  usa ese costo base (podés tener la acción de antes, a otro precio),
+  Buy-Write siempre usa el precio actual (comprás y vendés la call ya).
+  Corregí también la nota de paridad put-call, que en realidad aplica entre
+  Buy-Write y Cash-Secured Put, no entre Covered Call (con costo base
+  arbitrario) y Cash-Secured Put.
+- Para Covered Basket Call (2 acciones), el máximo beneficio y la máxima
+  pérdida siguen siendo sumas deterministas de cada posición, pero la
+  probabilidad de beneficio de la canasta depende de si las acciones se
+  mueven juntas o no, así que ahí ya no alcanza una fórmula cerrada.
+  Agregué `simular_precios_correlacionados` a `formulas.py` (modelo de un
+  factor: cada acción es una mezcla de un shock de mercado compartido y uno
+  propio, ponderada por ρ). Validé con 50.000 simulaciones que la
+  correlación resultante coincide con la elegida (ρ=0 dio 0.009, ρ=0.7 dio
+  0.701) y que el máximo simulado coincide exacto con el máximo beneficio
+  calculado a mano.
+- Notebook: teoría de por qué hace falta Monte Carlo acá, 8 sliders
+  compartidos entre las dos acciones más un dropdown de correlación, tabla
+  por acción y de la canasta completa, histograma del P&L simulado con las
+  zonas de beneficio y pérdida coloreadas.
+- Verificado con `marimo check` y `marimo export html` sin errores.
+  El usuario pidió esta vez probarlo primero en marimo antes de que yo
+  commitee y suba a GitHub, así que quedó pendiente ese paso.
+
 ## 2026-09-09 — Tema 8: Tier 1 de estrategias (direccionales simples)
 
 - Retomé la sesión (5 días después) para las herramientas de estrategia.

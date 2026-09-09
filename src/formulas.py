@@ -387,3 +387,18 @@ def payoff_neto_cash_secured_put(s_t: float, k: float, prima: float) -> float:
 
 def payoff_neto_protective_put(s_t: float, s0: float, k: float, prima: float) -> float:
     return (s_t - s0) + max(k - s_t, 0) - prima
+
+
+def simular_precios_correlacionados(
+    s1: float, s2: float, mu: float, sigma: float, t: float, rho: float, n_sim: int, semilla: int
+) -> tuple[np.ndarray, np.ndarray]:
+    rng = np.random.default_rng(semilla)
+    z_mercado = rng.standard_normal(n_sim)
+    z1_propio = rng.standard_normal(n_sim)
+    z2_propio = rng.standard_normal(n_sim)
+    z1 = math.sqrt(rho) * z_mercado + math.sqrt(1 - rho) * z1_propio
+    z2 = math.sqrt(rho) * z_mercado + math.sqrt(1 - rho) * z2_propio
+
+    s1_t = s1 * np.exp((mu - sigma**2 / 2) * t + sigma * math.sqrt(t) * z1)
+    s2_t = s2 * np.exp((mu - sigma**2 / 2) * t + sigma * math.sqrt(t) * z2)
+    return s1_t, s2_t

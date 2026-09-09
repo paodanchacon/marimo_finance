@@ -32,6 +32,7 @@ def _():
         prob_mayor_a_vencimiento,
         rho_call_americana,
         rho_put_americana,
+        simular_precios_correlacionados,
         simular_precios_gbm,
         theta_call_americana,
         theta_put_americana,
@@ -62,6 +63,7 @@ def _():
         prob_mayor_a_vencimiento,
         rho_call_americana,
         rho_put_americana,
+        simular_precios_correlacionados,
         simular_precios_gbm,
         theta_call_americana,
         theta_put_americana,
@@ -1292,17 +1294,31 @@ def _(mo):
         start=-0.20, stop=0.40, step=0.01, value=0.04,
         label="Tu expectativa de retorno anual (μ)", show_value=True,
     )
+    costo_base_slider = mo.ui.number(
+        start=1, stop=1000, step=1, value=100,
+        label="Precio de compra original de tu acción (Covered Call)",
+    )
     mo.vstack(
         [
             mo.hstack([s4_slider, k4_slider, dias4_slider]),
             mo.hstack([r4_slider, sigma4_slider, mu4_slider]),
+            mo.hstack([costo_base_slider]),
         ]
     )
-    return dias4_slider, k4_slider, mu4_slider, r4_slider, s4_slider, sigma4_slider
+    return (
+        costo_base_slider,
+        dias4_slider,
+        k4_slider,
+        mu4_slider,
+        r4_slider,
+        s4_slider,
+        sigma4_slider,
+    )
 
 
 @app.cell
 def _(
+    costo_base_slider,
     dias4_slider,
     k4_slider,
     mo,
@@ -1323,6 +1339,7 @@ def _(
     r4_valor = r4_slider.value
     sigma4_valor = sigma4_slider.value
     mu4_valor = mu4_slider.value
+    costo_base_valor = costo_base_slider.value
 
     prima_call4 = precio_binomial_call_americana(
         s4_valor, k4_valor, t4_valor, r4_valor, q4_valor, sigma4_valor, n_pasos4
@@ -1333,18 +1350,21 @@ def _(
 
     be_long_call = k4_valor + prima_call4
     be_long_put = k4_valor - prima_put4
-    be_covered_call = s4_valor - prima_call4
+    be_covered_call = costo_base_valor - prima_call4
+    be_buy_write = s4_valor - prima_call4
     be_cash_secured_put = k4_valor - prima_put4
     be_protective_put = s4_valor + prima_put4
 
     max_perdida_long_call = -prima_call4
     max_perdida_long_put = -prima_put4
-    max_perdida_covered_call = -(s4_valor - prima_call4)
+    max_perdida_covered_call = -(costo_base_valor - prima_call4)
+    max_perdida_buy_write = -(s4_valor - prima_call4)
     max_perdida_cash_secured_put = -(k4_valor - prima_put4)
     max_perdida_protective_put = -((s4_valor - k4_valor) + prima_put4)
 
     max_beneficio_long_put = k4_valor - prima_put4
-    max_beneficio_covered_call = (k4_valor - s4_valor) + prima_call4
+    max_beneficio_covered_call = (k4_valor - costo_base_valor) + prima_call4
+    max_beneficio_buy_write = (k4_valor - s4_valor) + prima_call4
     max_beneficio_cash_secured_put = prima_put4
 
     prob_long_call = prob_mayor_a_vencimiento(s4_valor, be_long_call, t4_valor, mu4_valor, q4_valor, sigma4_valor)
@@ -1353,6 +1373,9 @@ def _(
     )
     prob_covered_call = prob_mayor_a_vencimiento(
         s4_valor, be_covered_call, t4_valor, mu4_valor, q4_valor, sigma4_valor
+    )
+    prob_buy_write = prob_mayor_a_vencimiento(
+        s4_valor, be_buy_write, t4_valor, mu4_valor, q4_valor, sigma4_valor
     )
     prob_cash_secured_put = prob_mayor_a_vencimiento(
         s4_valor, be_cash_secured_put, t4_valor, mu4_valor, q4_valor, sigma4_valor
@@ -1367,14 +1390,17 @@ def _(
         |---|---|---|---|---|---|
         | Long Call | {prima_call4:,.2f} $ (pagada) | Ilimitado | {max_perdida_long_call:,.2f} $ | {be_long_call:,.2f} $ | {prob_long_call:.1%} |
         | Long Put | {prima_put4:,.2f} $ (pagada) | {max_beneficio_long_put:,.2f} $ | {max_perdida_long_put:,.2f} $ | {be_long_put:,.2f} $ | {prob_long_put:.1%} |
-        | Covered Call | {prima_call4:,.2f} $ (cobrada) | {max_beneficio_covered_call:,.2f} $ | {max_perdida_covered_call:,.2f} $ | {be_covered_call:,.2f} $ | {prob_covered_call:.1%} |
+        | Covered Call (acción ya en cartera) | {prima_call4:,.2f} $ (cobrada) | {max_beneficio_covered_call:,.2f} $ | {max_perdida_covered_call:,.2f} $ | {be_covered_call:,.2f} $ | {prob_covered_call:.1%} |
+        | Buy-Write (comprás y vendés la call ahora) | {prima_call4:,.2f} $ (cobrada) | {max_beneficio_buy_write:,.2f} $ | {max_perdida_buy_write:,.2f} $ | {be_buy_write:,.2f} $ | {prob_buy_write:.1%} |
         | Cash-Secured Put | {prima_put4:,.2f} $ (cobrada) | {max_beneficio_cash_secured_put:,.2f} $ | {max_perdida_cash_secured_put:,.2f} $ | {be_cash_secured_put:,.2f} $ | {prob_cash_secured_put:.1%} |
         | Protective Put | {prima_put4:,.2f} $ (pagada) | Ilimitado | {max_perdida_protective_put:,.2f} $ | {be_protective_put:,.2f} $ | {prob_protective_put:.1%} |
         """
     )
     return (
+        be_buy_write,
         be_cash_secured_put,
         be_covered_call,
+        costo_base_valor,
         k4_valor,
         mu4_valor,
         prima_call4,
@@ -1385,6 +1411,7 @@ def _(
 
 @app.cell
 def _(
+    costo_base_valor,
     go,
     k4_valor,
     np,
@@ -1401,6 +1428,9 @@ def _(
     curva_long_call = [payoff_neto_long_call(st, k4_valor, prima_call4) for st in st_rango]
     curva_long_put = [payoff_neto_long_put(st, k4_valor, prima_put4) for st in st_rango]
     curva_covered_call = [
+        payoff_neto_covered_call(st, costo_base_valor, k4_valor, prima_call4) for st in st_rango
+    ]
+    curva_buy_write = [
         payoff_neto_covered_call(st, s4_valor, k4_valor, prima_call4) for st in st_rango
     ]
     curva_cash_secured_put = [
@@ -1415,6 +1445,9 @@ def _(
     fig_estrategias.add_trace(go.Scatter(x=st_rango, y=curva_long_put, mode="lines", name="Long Put"))
     fig_estrategias.add_trace(
         go.Scatter(x=st_rango, y=curva_covered_call, mode="lines", name="Covered Call")
+    )
+    fig_estrategias.add_trace(
+        go.Scatter(x=st_rango, y=curva_buy_write, mode="lines", name="Buy-Write")
     )
     fig_estrategias.add_trace(
         go.Scatter(x=st_rango, y=curva_cash_secured_put, mode="lines", name="Cash-Secured Put")
@@ -1434,24 +1467,211 @@ def _(
 
 
 @app.cell
-def _(be_cash_secured_put, be_covered_call, mo, mu4_valor):
+def _(be_buy_write, be_cash_secured_put, costo_base_valor, mo, mu4_valor, s4_valor):
+    nota_costo_base = (
+        "Tu costo base coincide con el precio actual, así que Covered Call y "
+        "Buy-Write dan exactamente lo mismo en esta corrida."
+        if costo_base_valor == s4_valor
+        else (
+            "Fijate que Covered Call y Buy-Write ya no dan lo mismo: tu costo "
+            "base real cambia el breakeven y el máximo beneficio o pérdida "
+            "de vender la call sobre una acción que ya tenías, comparado con "
+            "comprarla y venderla hoy mismo."
+        )
+    )
+
+    mo.md(f"""
+    Con tu expectativa de retorno del **{mu4_valor:.1%} anual**: las
+    estrategias con beneficio ilimitado (Long Call, Protective Put)
+    tienden a tener menor probabilidad de beneficio que las que cobran
+    prima (Covered Call, Buy-Write, Cash-Secured Put). Es el trade-off
+    central de vender opciones, cobrás ahora a cambio de limitar cuánto
+    podés ganar.
+
+    {nota_costo_base}
+
+    Buy-Write y Cash-Secured Put dan breakevens casi idénticos
+    ({be_buy_write:,.2f} $ vs. {be_cash_secured_put:,.2f} $). No es
+    casualidad: están ligadas por la paridad put-call (Bloque 4 del PDF),
+    son casi la misma apuesta económica (cobrar prima a cambio de un
+    tope en la ganancia). La pequeña diferencia que ves es el costo
+    financiero de tener la acción comprada en vez de tener el efectivo
+    aparte.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Covered Basket Call: covered call sobre varias acciones a la vez
+
+    Es la misma idea del Covered Call, aplicada a una canasta de dos
+    acciones distintas en vez de una sola: tenés (o comprás) ambas
+    acciones y vendés una call sobre cada una.
+
+    El precio y las griegas de cada call salen del mismo motor de siempre,
+    call por call, así que eso no cambia. Lo que sí cambia es todo lo que
+    depende de **cómo se mueven las dos acciones juntas**: el máximo
+    beneficio y la máxima pérdida son simplemente la suma de los de cada
+    posición (no dependen de la correlación), pero la probabilidad de
+    beneficio de la canasta completa sí depende de si las acciones suelen
+    moverse juntas o no. Por eso, acá ya no alcanza una fórmula cerrada
+    como $N(d_2)$: hace falta simular muchos escenarios conjuntos de las
+    dos acciones y contar en cuántos la canasta completa termina en
+    beneficio.
+
+    **Cómo se simula la correlación**: cada acción se mueve por una parte
+    de riesgo compartido con el mercado y una parte propia:
+
+    $$Z_i = \sqrt{\rho}\, Z_{\text{mercado}} + \sqrt{1-\rho}\, Z_i^{\text{propio}}$$
+
+    Con $\rho=0$ las dos acciones se mueven de forma independiente; con
+    $\rho$ alto, tienden a subir y bajar juntas, lo que agranda la
+    dispersión de resultados de la canasta (ganás más en los mejores
+    escenarios conjuntos, pero también perdés más en los peores).
+
+    Simplificación de esta herramienta: misma tasa, volatilidad, plazo y
+    expectativa de retorno para las dos acciones, y 100 acciones por
+    posición. Una canasta real con más nombres y volatilidades propias
+    seguiría la misma lógica, solo que con más términos para sumar.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    s5a_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Acción 1: precio S₁ ($)")
+    k5a_slider = mo.ui.number(start=1, stop=1000, step=1, value=105, label="Acción 1: strike K₁ ($)")
+    s5b_slider = mo.ui.number(start=1, stop=1000, step=1, value=50, label="Acción 2: precio S₂ ($)")
+    k5b_slider = mo.ui.number(start=1, stop=1000, step=1, value=55, label="Acción 2: strike K₂ ($)")
+    dias5_slider = mo.ui.slider(
+        start=1, stop=365, step=1, value=30, label="Días a vencimiento", show_value=True
+    )
+    r5_slider = mo.ui.slider(
+        start=0.0, stop=0.10, step=0.0025, value=0.04, label="Tasa libre de riesgo",
+        show_value=True,
+    )
+    sigma5_slider = mo.ui.slider(
+        start=0.05, stop=1.0, step=0.01, value=0.25, label="Volatilidad anualizada (σ, ambas)",
+        show_value=True,
+    )
+    mu5_slider = mo.ui.slider(
+        start=-0.20, stop=0.40, step=0.01, value=0.08,
+        label="Expectativa de retorno anual (μ, ambas)", show_value=True,
+    )
+    correlacion_dropdown = mo.ui.dropdown(
+        options={"Independientes (ρ=0)": 0.0, "Correlacionadas (ρ=0.7)": 0.7},
+        value="Independientes (ρ=0)", label="Correlación entre las dos acciones",
+    )
+    mo.vstack(
+        [
+            mo.hstack([s5a_slider, k5a_slider, s5b_slider, k5b_slider]),
+            mo.hstack([dias5_slider, r5_slider, sigma5_slider, mu5_slider]),
+            mo.hstack([correlacion_dropdown]),
+        ]
+    )
+    return (
+        correlacion_dropdown,
+        dias5_slider,
+        k5a_slider,
+        k5b_slider,
+        mu5_slider,
+        r5_slider,
+        s5a_slider,
+        s5b_slider,
+        sigma5_slider,
+    )
+
+
+@app.cell
+def _(
+    correlacion_dropdown,
+    dias5_slider,
+    k5a_slider,
+    k5b_slider,
+    mo,
+    mu5_slider,
+    payoff_neto_covered_call,
+    precio_binomial_call_americana,
+    r5_slider,
+    s5a_slider,
+    s5b_slider,
+    sigma5_slider,
+    simular_precios_correlacionados,
+):
+    n_pasos5 = 200
+    n_sim5 = 20_000
+
+    s5a_valor = s5a_slider.value
+    k5a_valor = k5a_slider.value
+    s5b_valor = s5b_slider.value
+    k5b_valor = k5b_slider.value
+    t5_valor = dias5_slider.value / 365
+    r5_valor = r5_slider.value
+    sigma5_valor = sigma5_slider.value
+    mu5_valor = mu5_slider.value
+    rho5_valor = correlacion_dropdown.value
+
+    prima5a = precio_binomial_call_americana(
+        s5a_valor, k5a_valor, t5_valor, r5_valor, 0.0, sigma5_valor, n_pasos5
+    )
+    prima5b = precio_binomial_call_americana(
+        s5b_valor, k5b_valor, t5_valor, r5_valor, 0.0, sigma5_valor, n_pasos5
+    )
+
+    max_beneficio5 = ((k5a_valor - s5a_valor) + prima5a) + ((k5b_valor - s5b_valor) + prima5b)
+    max_perdida5 = -(s5a_valor - prima5a) - (s5b_valor - prima5b)
+
+    s5a_t, s5b_t = simular_precios_correlacionados(
+        s5a_valor, s5b_valor, mu5_valor, sigma5_valor, t5_valor, rho5_valor, n_sim5, 7
+    )
+    payoff5 = [
+        payoff_neto_covered_call(a, s5a_valor, k5a_valor, prima5a)
+        + payoff_neto_covered_call(b, s5b_valor, k5b_valor, prima5b)
+        for a, b in zip(s5a_t, s5b_t)
+    ]
+    prob_beneficio5 = sum(1 for p in payoff5 if p > 0) / n_sim5
+
     mo.md(
         f"""
-        Con tu expectativa de retorno del **{mu4_valor:.1%} anual**: las
-        estrategias con beneficio ilimitado (Long Call, Protective Put)
-        tienden a tener menor probabilidad de beneficio que las que cobran
-        prima (Covered Call, Cash-Secured Put). Es el trade-off central de
-        vender opciones, cobrás ahora a cambio de limitar cuánto podés ganar.
+        | | Acción 1 | Acción 2 | Canasta |
+        |---|---|---|---|
+        | Prima (cobrada) | {prima5a:,.2f} $ | {prima5b:,.2f} $ | {prima5a + prima5b:,.2f} $ |
+        | Máx. beneficio | {(k5a_valor - s5a_valor) + prima5a:,.2f} $ | {(k5b_valor - s5b_valor) + prima5b:,.2f} $ | {max_beneficio5:,.2f} $ |
+        | Máx. pérdida | {-(s5a_valor - prima5a):,.2f} $ | {-(s5b_valor - prima5b):,.2f} $ | {max_perdida5:,.2f} $ |
+        | Prob. de beneficio | | | {prob_beneficio5:.1%} |
 
-        Covered Call y Cash-Secured Put dan breakevens casi idénticos
-        ({be_covered_call:,.2f} $ vs. {be_cash_secured_put:,.2f} $). No es
-        casualidad: están ligadas por la paridad put-call (Bloque 4 del PDF),
-        son casi la misma apuesta económica (cobrar prima a cambio de un
-        tope en la ganancia). La pequeña diferencia que ves es el costo
-        financiero de tener la acción comprada en vez de tener el efectivo
-        aparte.
+        La probabilidad de beneficio de la canasta se estimó simulando
+        {n_sim5:,} escenarios conjuntos de las dos acciones.
         """
     )
+    return payoff5, prob_beneficio5
+
+
+@app.cell
+def _(go, np, payoff5, prob_beneficio5):
+    payoff5_arr = np.array(payoff5)
+
+    fig_canasta = go.Figure()
+    fig_canasta.add_trace(
+        go.Histogram(x=payoff5_arr[payoff5_arr <= 0], nbinsx=60, name="Pérdida",
+                     marker_color="indianred")
+    )
+    fig_canasta.add_trace(
+        go.Histogram(x=payoff5_arr[payoff5_arr > 0], nbinsx=60, name="Beneficio",
+                     marker_color="steelblue")
+    )
+    fig_canasta.add_vline(x=0, line_dash="dot", line_color="gray")
+    fig_canasta.update_layout(
+        title=f"Distribución simulada del P&L de la canasta (prob. de beneficio: {prob_beneficio5:.1%})",
+        xaxis_title="P&L combinado de la canasta al vencimiento ($)",
+        yaxis_title="Escenarios simulados",
+        barmode="overlay",
+    )
+    fig_canasta
     return
 
 
