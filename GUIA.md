@@ -220,8 +220,8 @@ no los importa.
 | Tier | Estrategias | Estado |
 |---|---|---|
 | 1 — direccionales simples | Long Call, Long Put, Covered Call, Buy-Write, Cash-Secured Put, Protective Put, Covered Basket Call (2 acciones) | ✅ Implementado (comparador único + sección aparte de canasta, ver detalle en Estado actual) |
-| 2 — spreads verticales | Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread | 🔲 Pendiente |
-| 3 — volatilidad/neutrales | Straddle, Strangle, Iron Condor, Butterfly, Calendar Spread | 🔲 Pendiente |
+| 2 — spreads verticales | Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread | ✅ Implementado (comparador único, ver detalle en Estado actual) |
+| 3 — volatilidad/neutrales | Straddle, Strangle, Iron Condor, Butterfly, Calendar Spread | ✅ Implementado (comparador de 4 + sección aparte de Calendar Spread, ver Estado actual) |
 
 **C. Liquidez** — caso aparte: depende de datos reales de mercado (bid-ask,
 volumen, open interest), no de fórmulas. Pendiente decidir input manual vs.
@@ -404,7 +404,50 @@ días, r, σ, μ) más el dropdown de correlación, tabla comparativa por
 acción y de la canasta completa, e histograma del P&L simulado de la
 canasta con las zonas de beneficio y pérdida coloreadas.
 
-Siguiente decisión (Tema 8): Tier 2 de estrategias (spreads verticales:
-Bull Call Spread, Bear Put Spread, Bull Put Spread, Bear Call Spread),
-Tier 3 (volatilidad/neutrales: Straddle, Strangle, Iron Condor, Butterfly,
-Calendar Spread), o la pieza de liquidez (C).
+**Tier 2 de estrategias (spreads verticales), completo y validado.**
+Mismo patrón de comparador único que el Tier 1: Bull Call Spread, Bear Put
+Spread, Bull Put Spread y Bear Call Spread evaluados bajo el mismo
+escenario (S, K₁, K₂, días, r, σ, μ). Las 4 fórmulas de payoff neto
+(`payoff_neto_bull_call_spread`, `payoff_neto_bear_put_spread`,
+`payoff_neto_bull_put_spread`, `payoff_neto_bear_call_spread`) se
+validaron a mano contra los valores esperados de máximo beneficio, máxima
+pérdida y breakeven, exacto en los 4 casos. También se verificó
+numéricamente la relación de espejo entre pares: Bear Call Spread es la
+posición contraria de Bull Call Spread con los mismos strikes (payoff
+negado), y lo mismo entre Bull Put Spread y Bear Put Spread. Notebook:
+teoría de las 4 combinaciones (débito vs. crédito, alcista vs. bajista), 7
+sliders (S, K₁, K₂, días, r, σ, μ), tabla comparativa, gráfico de P&L
+superpuesto de las 4 curvas.
+
+**Tier 3 de estrategias (volatilidad/neutrales), completo y validado.**
+Straddle, Strangle, Iron Condor y Butterfly comparten un solo comparador,
+con los strikes de las cuatro armados a partir de un strike central K y
+dos anchos (interno y externo, este último solo lo usa el Iron Condor para
+sus strikes comprados). Las 3 fórmulas de payoff nuevas
+(`payoff_neto_straddle`, `payoff_neto_strangle`, `payoff_neto_butterfly`)
+se validaron a mano contra los valores esperados de máximo beneficio,
+máxima pérdida y los dos breakevens de cada una, exacto en los 3 casos. El
+Iron Condor reutiliza `payoff_neto_bull_put_spread` +
+`payoff_neto_bear_call_spread` del Tier 2 sin agregar función nueva. Al
+validar encontré un error propio en el cálculo de referencia (no en la
+fórmula): la pérdida máxima del condor no es la suma de las dos pérdidas
+máximas individuales, porque nunca ocurren al mismo tiempo (una punta se
+pierde solo si la otra está en su máximo beneficio). Con alas simétricas
+se simplifica a `ancho_externo - crédito_total`, que es lo que ya estaba
+implementado.
+
+Calendar Spread quedó aparte porque mezcla dos vencimientos: al vencer la
+pata corta, la pata larga sigue viva y hay que revaluarla con el tiempo
+que le queda, reutilizando el mismo `precio_binomial_call_americana` del
+Motor 1 (no como payoff terminal, sino como repreciado en un punto
+intermedio). Validado: el P&L da la "carpa" esperada, con el máximo cerca
+del strike (S=K=100 → P&L≈+1.38) y convergiendo a −prima neta lejos de él
+en cualquier dirección (S=70 → −1.64, S=140 → −1.31, contra una prima neta
+de 1.64). Notebook con teoría de por qué hace falta revaluar en vez de
+usar un payoff simple, 6 sliders (S, K, días de cada pata, r, σ) y el
+gráfico de P&L en la fecha de vencimiento de la pata corta.
+
+Con esto, el Tier 1, 2 y 3 de estrategias del Tema 8 quedan completos.
+
+Siguiente decisión (Tema 8): la pieza de liquidez (C), o revisar/ajustar
+algo de lo ya construido.

@@ -1,5 +1,68 @@
 # Bitácora
 
+## 2026-09-10 — Tema 8: Tier 3, volatilidad/neutrales y Calendar Spread
+
+- El Tier 2 seguía sin commitear al arrancar esta sesión (nueva sesión
+  después de un corte de la anterior), así que confirmé el estado del
+  repo antes de seguir. El usuario pidió continuar con el Tier 3 sin dar
+  el visto bueno explícito al Tier 2 todavía, así que lo dejé sin
+  commitear y seguí construyendo encima.
+- Validé las 4 fórmulas antes de tocar el notebook: Straddle, Strangle,
+  Butterfly (nuevas) e Iron Condor (reutiliza `payoff_neto_bull_put_spread`
+  + `payoff_neto_bear_call_spread` del Tier 2, sin función nueva). Las 3
+  nuevas dan exacto el máximo beneficio, la máxima pérdida y los dos
+  breakevens esperados.
+- Al validar el Iron Condor cometí un error propio en el cálculo de
+  referencia: sumé las dos pérdidas máximas individuales, pero nunca
+  ocurren al mismo tiempo (si una punta está en pérdida máxima, la otra
+  está en su beneficio máximo). Con alas simétricas la pérdida máxima real
+  se simplifica a `ancho_externo - crédito_total`, que era justo lo que ya
+  tenía implementado, así que no hizo falta tocar código, solo corregir mi
+  propia cuenta de validación.
+- Diseñé una parametrización compartida para las 4 estrategias: un strike
+  central K más un ancho interno (separa K de los strikes cercanos) y un
+  ancho externo (solo lo usa el Iron Condor, para los strikes comprados
+  más lejanos). Esto permitió un solo comparador con 8 sliders en vez de
+  4 secciones con strikes sueltos.
+- Calendar Spread quedó en su propia sección porque mezcla dos
+  vencimientos: al vencer la pata corta, la pata larga sigue viva y hay
+  que revaluarla con el tiempo que le queda, usando
+  `precio_binomial_call_americana` como repreciador en un punto intermedio
+  (no como payoff terminal). Validé que el P&L forma la "carpa" esperada:
+  máximo cerca del strike (S=K=100 → P&L≈+1.38) y convergiendo a la prima
+  neta en pérdida lejos de él en cualquier dirección (S=70 → −1.64,
+  S=140 → −1.31, contra una prima neta pagada de 1.64).
+- Encontré y corregí dos colisiones de nombres de variables entre el Tier
+  2 y el Tier 3 (`prima_put_k1`, `prima_put_k2`, `prima_call_k2` se
+  repetían) que `marimo check` marcó como error crítico
+  (`multiple-definitions`). Las renombré con sufijo propio del Tier 3.
+- Verificado con `marimo check` (0 issues tras la corrección) y
+  `marimo export html` sin errores. Con esto, el Tier 1, 2 y 3 de
+  estrategias del Tema 8 quedan completos. Dejo el notebook corriendo en
+  marimo para que se pruebe (Tier 2 y Tier 3 juntos) antes de commitear.
+
+## 2026-09-09 (3) — Tema 8: Tier 2, spreads verticales
+
+- Subí Buy-Write y Covered Basket Call a GitHub (el usuario los probó
+  primero en marimo, como pidió, y dio el visto bueno).
+- Diseñé y validé las 4 estrategias del Tier 2 antes de tocar el notebook:
+  Bull Call Spread y Bear Put Spread (débito, comprás la protección),
+  Bull Put Spread y Bear Call Spread (crédito, la vendés). Comprobé a mano
+  que cada payoff da el máximo beneficio, la máxima pérdida y el breakeven
+  esperados, y que Bear Call Spread es exactamente el payoff negado de
+  Bull Call Spread con los mismos strikes (lo mismo entre Bull Put Spread
+  y Bear Put Spread), confirmando que son la misma posición vista desde
+  lados opuestos.
+- Agregué las 4 funciones de payoff neto a `formulas.py`
+  (`payoff_neto_bull_call_spread`, `payoff_neto_bear_put_spread`,
+  `payoff_neto_bull_put_spread`, `payoff_neto_bear_call_spread`).
+- Notebook: mismo patrón de comparador único del Tier 1, ahora con 2
+  strikes (K₁, K₂) en vez de uno, teoría de las 4 combinaciones
+  débito/crédito y alcista/bajista, tabla comparativa, gráfico de P&L
+  superpuesto de las 4 curvas.
+- Verificado con `marimo check` y `marimo export html` sin errores. Dejo
+  el notebook corriendo en marimo para que se pruebe antes de commitear.
+
 ## 2026-09-09 (2) — Tema 8: Buy-Write y Covered Basket Call
 
 - El usuario pidió agregar Buy-Write y Covered Basket Call al comparador de

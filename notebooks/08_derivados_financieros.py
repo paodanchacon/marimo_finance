@@ -22,11 +22,18 @@ def _():
         densidad_precio_terminal,
         gamma_call_americana,
         gamma_put_americana,
+        payoff_neto_bear_call_spread,
+        payoff_neto_bear_put_spread,
+        payoff_neto_bull_call_spread,
+        payoff_neto_bull_put_spread,
+        payoff_neto_butterfly,
         payoff_neto_cash_secured_put,
         payoff_neto_covered_call,
         payoff_neto_long_call,
         payoff_neto_long_put,
         payoff_neto_protective_put,
+        payoff_neto_straddle,
+        payoff_neto_strangle,
         precio_binomial_call_americana,
         precio_binomial_put_americana,
         prob_mayor_a_vencimiento,
@@ -53,11 +60,18 @@ def _():
         make_subplots,
         mo,
         np,
+        payoff_neto_bear_call_spread,
+        payoff_neto_bear_put_spread,
+        payoff_neto_bull_call_spread,
+        payoff_neto_bull_put_spread,
+        payoff_neto_butterfly,
         payoff_neto_cash_secured_put,
         payoff_neto_covered_call,
         payoff_neto_long_call,
         payoff_neto_long_put,
         payoff_neto_protective_put,
+        payoff_neto_straddle,
+        payoff_neto_strangle,
         precio_binomial_call_americana,
         precio_binomial_put_americana,
         prob_mayor_a_vencimiento,
@@ -1399,7 +1413,6 @@ def _(
     return (
         be_buy_write,
         be_cash_secured_put,
-        be_covered_call,
         costo_base_valor,
         k4_valor,
         mu4_valor,
@@ -1467,7 +1480,14 @@ def _(
 
 
 @app.cell
-def _(be_buy_write, be_cash_secured_put, costo_base_valor, mo, mu4_valor, s4_valor):
+def _(
+    be_buy_write,
+    be_cash_secured_put,
+    costo_base_valor,
+    mo,
+    mu4_valor,
+    s4_valor,
+):
     nota_costo_base = (
         "Tu costo base coincide con el precio actual, así que Covered Call y "
         "Buy-Write dan exactamente lo mismo en esta corrida."
@@ -1672,6 +1692,617 @@ def _(go, np, payoff5, prob_beneficio5):
         barmode="overlay",
     )
     fig_canasta
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Herramientas de estrategia: Tier 2, spreads verticales
+
+    Un spread vertical combina dos opciones del mismo tipo (dos calls o
+    dos puts), mismo vencimiento, distinto strike. La idea central: comprar
+    una y vender la otra recorta tanto el beneficio máximo como la pérdida
+    máxima, a cambio de pagar menos prima (o directamente cobrar prima) que
+    con una opción sola.
+
+    - **Bull Call Spread** (débito): comprás la call de strike más bajo
+      (K₁) y vendés la de strike más alto (K₂). Apuesta alcista, pagás
+      prima neta.
+    - **Bear Put Spread** (débito): comprás la put de strike más alto (K₂)
+      y vendés la de strike más bajo (K₁). Apuesta bajista, pagás prima
+      neta.
+    - **Bull Put Spread** (crédito): vendés la put de strike más alto (K₂)
+      y comprás la de strike más bajo (K₁). Apuesta alcista, cobrás prima
+      neta.
+    - **Bear Call Spread** (crédito): vendés la call de strike más bajo
+      (K₁) y comprás la de strike más alto (K₂). Apuesta bajista, cobrás
+      prima neta.
+
+    Bear Call Spread es exactamente la posición contraria a Bull Call
+    Spread (mismos strikes, roles invertidos), y lo mismo entre Bull Put
+    Spread y Bear Put Spread: por eso sus payoffs son espejo uno del otro.
+
+    Las cuatro se evalúan bajo el mismo escenario (S, K₁, K₂, días, tasa,
+    volatilidad y tu propia expectativa de retorno μ), reutilizando el
+    Motor 1 (prima) y el Motor 3 (probabilidad de beneficio).
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    s6_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Precio subyacente S ($)")
+    k6a_slider = mo.ui.number(start=1, stop=1000, step=1, value=95, label="Strike inferior K₁ ($)")
+    k6b_slider = mo.ui.number(start=1, stop=1000, step=1, value=105, label="Strike superior K₂ ($)")
+    dias6_slider = mo.ui.slider(
+        start=1, stop=365, step=1, value=30, label="Días a vencimiento", show_value=True
+    )
+    r6_slider = mo.ui.slider(
+        start=0.0, stop=0.10, step=0.0025, value=0.04, label="Tasa libre de riesgo",
+        show_value=True,
+    )
+    sigma6_slider = mo.ui.slider(
+        start=0.05, stop=1.0, step=0.01, value=0.25, label="Volatilidad anualizada (σ)",
+        show_value=True,
+    )
+    mu6_slider = mo.ui.slider(
+        start=-0.20, stop=0.40, step=0.01, value=0.04,
+        label="Tu expectativa de retorno anual (μ)", show_value=True,
+    )
+    mo.vstack(
+        [
+            mo.hstack([s6_slider, k6a_slider, k6b_slider, dias6_slider]),
+            mo.hstack([r6_slider, sigma6_slider, mu6_slider]),
+        ]
+    )
+    return (
+        dias6_slider,
+        k6a_slider,
+        k6b_slider,
+        mu6_slider,
+        r6_slider,
+        s6_slider,
+        sigma6_slider,
+    )
+
+
+@app.cell
+def _(
+    dias6_slider,
+    k6a_slider,
+    k6b_slider,
+    mo,
+    mu6_slider,
+    precio_binomial_call_americana,
+    precio_binomial_put_americana,
+    prob_mayor_a_vencimiento,
+    r6_slider,
+    s6_slider,
+    sigma6_slider,
+):
+    n_pasos6 = 200
+    q6_valor = 0.0
+
+    s6_valor = s6_slider.value
+    k6a_valor = k6a_slider.value
+    k6b_valor = k6b_slider.value
+    t6_valor = dias6_slider.value / 365
+    r6_valor = r6_slider.value
+    sigma6_valor = sigma6_slider.value
+    mu6_valor = mu6_slider.value
+
+    prima_call_k1 = precio_binomial_call_americana(
+        s6_valor, k6a_valor, t6_valor, r6_valor, q6_valor, sigma6_valor, n_pasos6
+    )
+    prima_call_k2 = precio_binomial_call_americana(
+        s6_valor, k6b_valor, t6_valor, r6_valor, q6_valor, sigma6_valor, n_pasos6
+    )
+    prima_put_k1 = precio_binomial_put_americana(
+        s6_valor, k6a_valor, t6_valor, r6_valor, q6_valor, sigma6_valor, n_pasos6
+    )
+    prima_put_k2 = precio_binomial_put_americana(
+        s6_valor, k6b_valor, t6_valor, r6_valor, q6_valor, sigma6_valor, n_pasos6
+    )
+
+    ancho6 = k6b_valor - k6a_valor
+    prima_neta_call = prima_call_k1 - prima_call_k2
+    prima_neta_put = prima_put_k2 - prima_put_k1
+
+    be_bull_call = k6a_valor + prima_neta_call
+    be_bear_put = k6b_valor - prima_neta_put
+    be_bull_put = k6b_valor - prima_neta_put
+    be_bear_call = k6a_valor + prima_neta_call
+
+    max_beneficio_bull_call = ancho6 - prima_neta_call
+    max_beneficio_bear_put = ancho6 - prima_neta_put
+    max_beneficio_bull_put = prima_neta_put
+    max_beneficio_bear_call = prima_neta_call
+
+    max_perdida_bull_call = -prima_neta_call
+    max_perdida_bear_put = -prima_neta_put
+    max_perdida_bull_put = -(ancho6 - prima_neta_put)
+    max_perdida_bear_call = -(ancho6 - prima_neta_call)
+
+    prob_bull_call = prob_mayor_a_vencimiento(s6_valor, be_bull_call, t6_valor, mu6_valor, q6_valor, sigma6_valor)
+    prob_bear_put = 1 - prob_mayor_a_vencimiento(
+        s6_valor, be_bear_put, t6_valor, mu6_valor, q6_valor, sigma6_valor
+    )
+    prob_bull_put = prob_mayor_a_vencimiento(s6_valor, be_bull_put, t6_valor, mu6_valor, q6_valor, sigma6_valor)
+    prob_bear_call = 1 - prob_mayor_a_vencimiento(
+        s6_valor, be_bear_call, t6_valor, mu6_valor, q6_valor, sigma6_valor
+    )
+
+    mo.md(
+        f"""
+        | Estrategia | Prima neta | Máx. beneficio | Máx. pérdida | Breakeven | Prob. de beneficio |
+        |---|---|---|---|---|---|
+        | Bull Call Spread | {prima_neta_call:,.2f} $ (débito) | {max_beneficio_bull_call:,.2f} $ | {max_perdida_bull_call:,.2f} $ | {be_bull_call:,.2f} $ | {prob_bull_call:.1%} |
+        | Bear Put Spread | {prima_neta_put:,.2f} $ (débito) | {max_beneficio_bear_put:,.2f} $ | {max_perdida_bear_put:,.2f} $ | {be_bear_put:,.2f} $ | {prob_bear_put:.1%} |
+        | Bull Put Spread | {prima_neta_put:,.2f} $ (crédito) | {max_beneficio_bull_put:,.2f} $ | {max_perdida_bull_put:,.2f} $ | {be_bull_put:,.2f} $ | {prob_bull_put:.1%} |
+        | Bear Call Spread | {prima_neta_call:,.2f} $ (crédito) | {max_beneficio_bear_call:,.2f} $ | {max_perdida_bear_call:,.2f} $ | {be_bear_call:,.2f} $ | {prob_bear_call:.1%} |
+        """
+    )
+    return k6a_valor, k6b_valor, prima_neta_call, prima_neta_put, s6_valor
+
+
+@app.cell
+def _(
+    go,
+    k6a_valor,
+    k6b_valor,
+    np,
+    payoff_neto_bear_call_spread,
+    payoff_neto_bear_put_spread,
+    payoff_neto_bull_call_spread,
+    payoff_neto_bull_put_spread,
+    prima_neta_call,
+    prima_neta_put,
+    s6_valor,
+):
+    st_rango6 = np.linspace(max(s6_valor * 0.5, 1), s6_valor * 1.5, 200)
+    curva_bull_call = [
+        payoff_neto_bull_call_spread(st, k6a_valor, k6b_valor, prima_neta_call) for st in st_rango6
+    ]
+    curva_bear_put = [
+        payoff_neto_bear_put_spread(st, k6a_valor, k6b_valor, prima_neta_put) for st in st_rango6
+    ]
+    curva_bull_put = [
+        payoff_neto_bull_put_spread(st, k6a_valor, k6b_valor, prima_neta_put) for st in st_rango6
+    ]
+    curva_bear_call = [
+        payoff_neto_bear_call_spread(st, k6a_valor, k6b_valor, prima_neta_call) for st in st_rango6
+    ]
+
+    fig_spreads = go.Figure()
+    fig_spreads.add_trace(
+        go.Scatter(x=st_rango6, y=curva_bull_call, mode="lines", name="Bull Call Spread")
+    )
+    fig_spreads.add_trace(
+        go.Scatter(x=st_rango6, y=curva_bear_put, mode="lines", name="Bear Put Spread")
+    )
+    fig_spreads.add_trace(
+        go.Scatter(x=st_rango6, y=curva_bull_put, mode="lines", name="Bull Put Spread")
+    )
+    fig_spreads.add_trace(
+        go.Scatter(x=st_rango6, y=curva_bear_call, mode="lines", name="Bear Call Spread")
+    )
+    fig_spreads.add_hline(y=0, line_dash="dot", line_color="gray")
+    fig_spreads.add_vline(x=k6a_valor, line_dash="dot", annotation_text="K₁")
+    fig_spreads.add_vline(x=k6b_valor, line_dash="dot", annotation_text="K₂")
+    fig_spreads.update_layout(
+        title="Comparación de P&L al vencimiento, spreads verticales",
+        xaxis_title="Precio del subyacente al vencimiento (S_T)",
+        yaxis_title="Ganancia / pérdida neta ($)",
+    )
+    fig_spreads
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    Fijate que Bull Call Spread y Bear Call Spread dibujan la misma recta
+    quebrada, espejada respecto al cero: una es la posición contraria de
+    la otra, con los mismos strikes. Lo mismo pasa entre Bear Put Spread
+    y Bull Put Spread. Por eso, para el mismo par de strikes, siempre hay
+    una versión "comprada" (paga prima, pérdida acotada, beneficio
+    acotado pero mayor que la prima pagada) y una versión "vendida"
+    (cobra prima, beneficio acotado a esa prima, pérdida acotada pero
+    mayor).
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Herramientas de estrategia: Tier 3, volatilidad y neutrales
+
+    Estas cuatro no apuestan a que el precio suba o baje, sino a **cuánto
+    se mueve** (o a que no se mueva). Usan 1 a 4 strikes alrededor de un
+    centro K:
+
+    - **Straddle** (comprar call y put, mismo strike K): apuesta a un
+      movimiento grande, en cualquier dirección. Prima cara, sin techo de
+      beneficio.
+    - **Strangle** (comprar call y put, strikes distintos y más lejos del
+      precio): la misma apuesta que el straddle, pero más barata porque
+      pide un movimiento todavía mayor para dar beneficio.
+    - **Iron Condor** (vender un Bull Put Spread + vender un Bear Call
+      Spread): apuesta contraria, a que el precio se quede en un rango.
+      Cobra prima, con beneficio y pérdida acotados.
+    - **Butterfly** (comprar 1 call en K₁, vender 2 calls en K₂, comprar 1
+      call en K₃, con K₂ a mitad de camino): apuesta a que el precio
+      termine justo cerca de K₂. Paga poca prima, beneficio máximo si
+      acierta el centro.
+
+    Para poder compararlas con los mismos controles, los strikes de las
+    cuatro se arman a partir de un strike central K y dos anchos:
+
+    - **Ancho interno**: separa K de los strikes cercanos (K₁ y K₂ del
+      strangle, las alas del butterfly, los strikes vendidos del condor).
+    - **Ancho externo**: solo lo usa el Iron Condor, para los strikes
+      comprados (más lejos todavía, el límite de la pérdida).
+
+    Se evalúan bajo el mismo escenario (S, K, anchos, días, tasa,
+    volatilidad y tu expectativa de retorno μ), reutilizando el Motor 1 y
+    el Motor 3.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    s7_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Precio subyacente S ($)")
+    k7_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Strike central K ($)")
+    ancho_int_slider = mo.ui.slider(
+        start=1, stop=50, step=1, value=10, label="Ancho interno", show_value=True
+    )
+    ancho_ext_slider = mo.ui.slider(
+        start=1, stop=50, step=1, value=10, label="Ancho externo (solo Iron Condor)",
+        show_value=True,
+    )
+    dias7_slider = mo.ui.slider(
+        start=1, stop=365, step=1, value=30, label="Días a vencimiento", show_value=True
+    )
+    r7_slider = mo.ui.slider(
+        start=0.0, stop=0.10, step=0.0025, value=0.04, label="Tasa libre de riesgo",
+        show_value=True,
+    )
+    sigma7_slider = mo.ui.slider(
+        start=0.05, stop=1.0, step=0.01, value=0.25, label="Volatilidad anualizada (σ)",
+        show_value=True,
+    )
+    mu7_slider = mo.ui.slider(
+        start=-0.20, stop=0.40, step=0.01, value=0.04,
+        label="Tu expectativa de retorno anual (μ)", show_value=True,
+    )
+    mo.vstack(
+        [
+            mo.hstack([s7_slider, k7_slider, ancho_int_slider, ancho_ext_slider]),
+            mo.hstack([dias7_slider, r7_slider, sigma7_slider, mu7_slider]),
+        ]
+    )
+    return (
+        ancho_ext_slider,
+        ancho_int_slider,
+        dias7_slider,
+        k7_slider,
+        mu7_slider,
+        r7_slider,
+        s7_slider,
+        sigma7_slider,
+    )
+
+
+@app.cell
+def _(
+    ancho_ext_slider,
+    ancho_int_slider,
+    dias7_slider,
+    k7_slider,
+    mo,
+    mu7_slider,
+    precio_binomial_call_americana,
+    precio_binomial_put_americana,
+    prob_mayor_a_vencimiento,
+    r7_slider,
+    s7_slider,
+    sigma7_slider,
+):
+    n_pasos7 = 200
+    q7_valor = 0.0
+
+    s7_valor = s7_slider.value
+    k7_valor = k7_slider.value
+    ancho_int7 = ancho_int_slider.value
+    ancho_ext7 = ancho_ext_slider.value
+    t7_valor = dias7_slider.value / 365
+    r7_valor = r7_slider.value
+    sigma7_valor = sigma7_slider.value
+    mu7_valor = mu7_slider.value
+
+    k7_1 = k7_valor - ancho_int7 - ancho_ext7
+    k7_2 = k7_valor - ancho_int7
+    k7_3 = k7_valor + ancho_int7
+    k7_4 = k7_valor + ancho_int7 + ancho_ext7
+
+    prima_call_k7 = precio_binomial_call_americana(s7_valor, k7_valor, t7_valor, r7_valor, q7_valor, sigma7_valor, n_pasos7)
+    prima_put_k7 = precio_binomial_put_americana(s7_valor, k7_valor, t7_valor, r7_valor, q7_valor, sigma7_valor, n_pasos7)
+    prima_put_k7_1 = precio_binomial_put_americana(s7_valor, k7_1, t7_valor, r7_valor, q7_valor, sigma7_valor, n_pasos7)
+    prima_put_k7_2 = precio_binomial_put_americana(s7_valor, k7_2, t7_valor, r7_valor, q7_valor, sigma7_valor, n_pasos7)
+    prima_call_k7_2 = precio_binomial_call_americana(s7_valor, k7_2, t7_valor, r7_valor, q7_valor, sigma7_valor, n_pasos7)
+    prima_call_k7_3 = precio_binomial_call_americana(s7_valor, k7_3, t7_valor, r7_valor, q7_valor, sigma7_valor, n_pasos7)
+    prima_call_k7_4 = precio_binomial_call_americana(s7_valor, k7_4, t7_valor, r7_valor, q7_valor, sigma7_valor, n_pasos7)
+
+    # Straddle: call + put en K
+    prima_straddle = prima_call_k7 + prima_put_k7
+    be_straddle_bajo = k7_valor - prima_straddle
+    be_straddle_alto = k7_valor + prima_straddle
+    max_perdida_straddle = -prima_straddle
+    prob_straddle = (
+        1 - prob_mayor_a_vencimiento(s7_valor, be_straddle_bajo, t7_valor, mu7_valor, q7_valor, sigma7_valor)
+        + prob_mayor_a_vencimiento(s7_valor, be_straddle_alto, t7_valor, mu7_valor, q7_valor, sigma7_valor)
+    )
+
+    # Strangle: put en K2 (K-ancho_interno) + call en K3 (K+ancho_interno)
+    prima_strangle = prima_put_k7_2 + prima_call_k7_3
+    be_strangle_bajo = k7_2 - prima_strangle
+    be_strangle_alto = k7_3 + prima_strangle
+    max_perdida_strangle = -prima_strangle
+    prob_strangle = (
+        1 - prob_mayor_a_vencimiento(s7_valor, be_strangle_bajo, t7_valor, mu7_valor, q7_valor, sigma7_valor)
+        + prob_mayor_a_vencimiento(s7_valor, be_strangle_alto, t7_valor, mu7_valor, q7_valor, sigma7_valor)
+    )
+
+    # Butterfly: call K2 - 2x call K (centro) + call K3
+    prima_neta_butterfly = prima_call_k7_2 - 2 * prima_call_k7 + prima_call_k7_3
+    be_butterfly_bajo = k7_2 + prima_neta_butterfly
+    be_butterfly_alto = k7_3 - prima_neta_butterfly
+    max_beneficio_butterfly = ancho_int7 - prima_neta_butterfly
+    max_perdida_butterfly = -prima_neta_butterfly
+    prob_butterfly = prob_mayor_a_vencimiento(
+        s7_valor, be_butterfly_bajo, t7_valor, mu7_valor, q7_valor, sigma7_valor
+    ) - prob_mayor_a_vencimiento(s7_valor, be_butterfly_alto, t7_valor, mu7_valor, q7_valor, sigma7_valor)
+
+    # Iron Condor: bull put spread (K1,K2) + bear call spread (K3,K4), ambos a credito
+    prima_neta_put_ic = prima_put_k7_2 - prima_put_k7_1
+    prima_neta_call_ic = prima_call_k7_3 - prima_call_k7_4
+    credito_ic = prima_neta_put_ic + prima_neta_call_ic
+    be_ic_bajo = k7_2 - credito_ic
+    be_ic_alto = k7_3 + credito_ic
+    max_beneficio_ic = credito_ic
+    max_perdida_ic = -(ancho_ext7 - credito_ic)
+    prob_ic = prob_mayor_a_vencimiento(
+        s7_valor, be_ic_bajo, t7_valor, mu7_valor, q7_valor, sigma7_valor
+    ) - prob_mayor_a_vencimiento(s7_valor, be_ic_alto, t7_valor, mu7_valor, q7_valor, sigma7_valor)
+
+    mo.md(
+        f"""
+        | Estrategia | Prima neta | Máx. beneficio | Máx. pérdida | Breakevens | Prob. de beneficio |
+        |---|---|---|---|---|---|
+        | Straddle | {prima_straddle:,.2f} $ (débito) | Ilimitado | {max_perdida_straddle:,.2f} $ | {be_straddle_bajo:,.2f} $ / {be_straddle_alto:,.2f} $ | {prob_straddle:.1%} |
+        | Strangle | {prima_strangle:,.2f} $ (débito) | Ilimitado | {max_perdida_strangle:,.2f} $ | {be_strangle_bajo:,.2f} $ / {be_strangle_alto:,.2f} $ | {prob_strangle:.1%} |
+        | Iron Condor | {credito_ic:,.2f} $ (crédito) | {max_beneficio_ic:,.2f} $ | {max_perdida_ic:,.2f} $ | {be_ic_bajo:,.2f} $ / {be_ic_alto:,.2f} $ | {prob_ic:.1%} |
+        | Butterfly | {prima_neta_butterfly:,.2f} $ (débito) | {max_beneficio_butterfly:,.2f} $ | {max_perdida_butterfly:,.2f} $ | {be_butterfly_bajo:,.2f} $ / {be_butterfly_alto:,.2f} $ | {prob_butterfly:.1%} |
+        """
+    )
+    return (
+        k7_1,
+        k7_2,
+        k7_3,
+        k7_4,
+        k7_valor,
+        prima_neta_butterfly,
+        prima_straddle,
+        prima_strangle,
+        prima_neta_call_ic,
+        prima_neta_put_ic,
+        s7_valor,
+    )
+
+
+@app.cell
+def _(
+    go,
+    k7_1,
+    k7_2,
+    k7_3,
+    k7_4,
+    k7_valor,
+    np,
+    payoff_neto_bear_call_spread,
+    payoff_neto_bull_put_spread,
+    payoff_neto_butterfly,
+    payoff_neto_straddle,
+    payoff_neto_strangle,
+    prima_neta_butterfly,
+    prima_neta_call_ic,
+    prima_neta_put_ic,
+    prima_straddle,
+    prima_strangle,
+    s7_valor,
+):
+    st_rango7 = np.linspace(max(k7_1 * 0.7, 1), k7_4 * 1.3, 250)
+    curva_straddle = [payoff_neto_straddle(st, k7_valor, prima_straddle) for st in st_rango7]
+    curva_strangle = [payoff_neto_strangle(st, k7_2, k7_3, prima_strangle) for st in st_rango7]
+    curva_butterfly = [
+        payoff_neto_butterfly(st, k7_2, k7_valor, k7_3, prima_neta_butterfly) for st in st_rango7
+    ]
+    curva_iron_condor = [
+        payoff_neto_bull_put_spread(st, k7_1, k7_2, prima_neta_put_ic)
+        + payoff_neto_bear_call_spread(st, k7_3, k7_4, prima_neta_call_ic)
+        for st in st_rango7
+    ]
+
+    fig_vol = go.Figure()
+    fig_vol.add_trace(go.Scatter(x=st_rango7, y=curva_straddle, mode="lines", name="Straddle"))
+    fig_vol.add_trace(go.Scatter(x=st_rango7, y=curva_strangle, mode="lines", name="Strangle"))
+    fig_vol.add_trace(go.Scatter(x=st_rango7, y=curva_iron_condor, mode="lines", name="Iron Condor"))
+    fig_vol.add_trace(go.Scatter(x=st_rango7, y=curva_butterfly, mode="lines", name="Butterfly"))
+    fig_vol.add_hline(y=0, line_dash="dot", line_color="gray")
+    fig_vol.add_vline(x=s7_valor, line_dash="dash", line_color="gray", annotation_text="S actual")
+    fig_vol.update_layout(
+        title="Comparación de P&L al vencimiento, estrategias de volatilidad",
+        xaxis_title="Precio del subyacente al vencimiento (S_T)",
+        yaxis_title="Ganancia / pérdida neta ($)",
+    )
+    fig_vol
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Calendar Spread: la única que mezcla dos vencimientos
+
+    Vendés una opción de vencimiento corto y comprás la misma opción
+    (mismo strike, mismo tipo) con un vencimiento más largo. Es distinta a
+    todas las anteriores porque, cuando vence la pata corta, la pata larga
+    **todavía no venció**: sigue siendo una opción viva, con el tiempo que
+    le queda hasta su propio vencimiento.
+
+    Por eso acá no alcanza con un payoff al vencimiento: hay que **revaluar
+    la pata larga** en la fecha de vencimiento de la corta, usando el mismo
+    árbol binomial de siempre pero con el tiempo que le queda. El resultado
+    en esa fecha es:
+
+    $$P\&L = \underbrace{-\max(S_{T_1}-K,\,0)}_{\text{pata corta, ya venció}} + \underbrace{V_{\text{larga}}(S_{T_1},\ T_2-T_1)}_{\text{pata larga, revaluada}} - \text{prima neta pagada}$$
+
+    Esto da una forma de "carpa": se gana más cuando el subyacente termina
+    cerca del strike (la pata corta expira sin valor y la pata larga
+    todavía conserva tiempo), y se pierde a medida que se aleja en
+    cualquier dirección (ahí ya perdés casi toda la prima neta pagada, sin
+    importar para qué lado se movió).
+
+    Simplificación: se asume que la pata corta no se ejerce anticipadamente
+    antes de su vencimiento.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    s8_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Precio subyacente S ($)")
+    k8_slider = mo.ui.number(start=1, stop=1000, step=1, value=100, label="Strike K ($)")
+    dias_corto_slider = mo.ui.slider(
+        start=1, stop=90, step=1, value=15, label="Días a vencimiento (pata corta)",
+        show_value=True,
+    )
+    dias_largo_slider = mo.ui.slider(
+        start=2, stop=180, step=1, value=45, label="Días a vencimiento (pata larga)",
+        show_value=True,
+    )
+    r8_slider = mo.ui.slider(
+        start=0.0, stop=0.10, step=0.0025, value=0.04, label="Tasa libre de riesgo",
+        show_value=True,
+    )
+    sigma8_slider = mo.ui.slider(
+        start=0.05, stop=1.0, step=0.01, value=0.25, label="Volatilidad anualizada (σ)",
+        show_value=True,
+    )
+    mo.vstack(
+        [
+            mo.hstack([s8_slider, k8_slider]),
+            mo.hstack([dias_corto_slider, dias_largo_slider, r8_slider, sigma8_slider]),
+        ]
+    )
+    return dias_corto_slider, dias_largo_slider, k8_slider, r8_slider, s8_slider, sigma8_slider
+
+
+@app.cell
+def _(
+    dias_corto_slider,
+    dias_largo_slider,
+    k8_slider,
+    mo,
+    precio_binomial_call_americana,
+    r8_slider,
+    s8_slider,
+    sigma8_slider,
+):
+    n_pasos8 = 200
+    q8_valor = 0.0
+
+    s8_valor = s8_slider.value
+    k8_valor = k8_slider.value
+    t8_corto = dias_corto_slider.value / 365
+    t8_largo = dias_largo_slider.value / 365
+    r8_valor = r8_slider.value
+    sigma8_valor = sigma8_slider.value
+
+    prima8_corta = precio_binomial_call_americana(
+        s8_valor, k8_valor, t8_corto, r8_valor, q8_valor, sigma8_valor, n_pasos8
+    )
+    prima8_larga = precio_binomial_call_americana(
+        s8_valor, k8_valor, t8_largo, r8_valor, q8_valor, sigma8_valor, n_pasos8
+    )
+    prima_neta8 = prima8_larga - prima8_corta
+
+    mo.md(
+        f"""
+        Prima de la pata corta (cobrada): **{prima8_corta:,.2f} $**. Prima
+        de la pata larga (pagada): **{prima8_larga:,.2f} $**. Prima neta
+        (débito): **{prima_neta8:,.2f} $**.
+        """
+    )
+    return (
+        k8_valor,
+        n_pasos8,
+        prima_neta8,
+        q8_valor,
+        r8_valor,
+        s8_valor,
+        sigma8_valor,
+        t8_corto,
+        t8_largo,
+    )
+
+
+@app.cell
+def _(
+    go,
+    k8_valor,
+    n_pasos8,
+    np,
+    precio_binomial_call_americana,
+    prima_neta8,
+    q8_valor,
+    r8_valor,
+    s8_valor,
+    sigma8_valor,
+    t8_corto,
+    t8_largo,
+):
+    t8_restante = t8_largo - t8_corto
+    st_rango8 = np.linspace(max(s8_valor * 0.6, 1), s8_valor * 1.4, 150)
+
+    def pl_calendar(s_t1):
+        intrinseco_corta = max(s_t1 - k8_valor, 0)
+        valor_larga_revaluada = precio_binomial_call_americana(
+            s_t1, k8_valor, t8_restante, r8_valor, q8_valor, sigma8_valor, n_pasos8
+        )
+        return -intrinseco_corta + valor_larga_revaluada - prima_neta8
+
+    curva_calendar = [pl_calendar(st) for st in st_rango8]
+
+    fig_calendar = go.Figure()
+    fig_calendar.add_trace(go.Scatter(x=st_rango8, y=curva_calendar, mode="lines", name="Calendar Spread"))
+    fig_calendar.add_hline(y=0, line_dash="dot", line_color="gray")
+    fig_calendar.add_vline(x=k8_valor, line_dash="dot", annotation_text="Strike (K)")
+    fig_calendar.update_layout(
+        title="P&L del Calendar Spread al vencimiento de la pata corta",
+        xaxis_title="Precio del subyacente en ese momento (S_T1)",
+        yaxis_title="Ganancia / pérdida neta ($)",
+    )
+    fig_calendar
     return
 
 

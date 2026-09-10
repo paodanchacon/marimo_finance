@@ -402,3 +402,31 @@ def simular_precios_correlacionados(
     s1_t = s1 * np.exp((mu - sigma**2 / 2) * t + sigma * math.sqrt(t) * z1)
     s2_t = s2 * np.exp((mu - sigma**2 / 2) * t + sigma * math.sqrt(t) * z2)
     return s1_t, s2_t
+
+
+def payoff_neto_bull_call_spread(s_t: float, k1: float, k2: float, prima_neta: float) -> float:
+    return max(s_t - k1, 0) - max(s_t - k2, 0) - prima_neta
+
+
+def payoff_neto_bear_put_spread(s_t: float, k1: float, k2: float, prima_neta: float) -> float:
+    return max(k2 - s_t, 0) - max(k1 - s_t, 0) - prima_neta
+
+
+def payoff_neto_bull_put_spread(s_t: float, k1: float, k2: float, prima_neta: float) -> float:
+    return prima_neta - max(k2 - s_t, 0) + max(k1 - s_t, 0)
+
+
+def payoff_neto_bear_call_spread(s_t: float, k1: float, k2: float, prima_neta: float) -> float:
+    return prima_neta - max(s_t - k1, 0) + max(s_t - k2, 0)
+
+
+def payoff_neto_straddle(s_t: float, k: float, prima_total: float) -> float:
+    return abs(s_t - k) - prima_total
+
+
+def payoff_neto_strangle(s_t: float, k1: float, k2: float, prima_total: float) -> float:
+    return max(k1 - s_t, 0) + max(s_t - k2, 0) - prima_total
+
+
+def payoff_neto_butterfly(s_t: float, k1: float, k2: float, k3: float, prima_neta: float) -> float:
+    return max(s_t - k1, 0) - 2 * max(s_t - k2, 0) + max(s_t - k3, 0) - prima_neta
