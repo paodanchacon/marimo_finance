@@ -14,3 +14,6 @@ __marimo__/
 
 # Claude Code local tool config
 .claude/
+
+# Reglas de trabajo personales, no compartidas en el repo
+CLAUDE.md
