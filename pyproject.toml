@@ -9,5 +9,7 @@ dependencies = [
     "numpy-financial>=1.0.0",
     "pandas>=3.0.5",
     "plotly>=7.0.0",
+    "pymysql>=1.2.0",
     "scipy>=1.18.1",
+    "sqlalchemy>=2.0.53",
 ]

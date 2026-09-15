@@ -15,5 +15,8 @@ __marimo__/
 # Claude Code local tool config
 .claude/
 
+# Credenciales de la base de datos local
+.env
+
 # Reglas de trabajo personales, no compartidas en el repo
 CLAUDE.md
