@@ -430,3 +430,67 @@ def payoff_neto_strangle(s_t: float, k1: float, k2: float, prima_total: float) -
 
 def payoff_neto_butterfly(s_t: float, k1: float, k2: float, k3: float, prima_neta: float) -> float:
     return max(s_t - k1, 0) - 2 * max(s_t - k2, 0) + max(s_t - k3, 0) - prima_neta
+
+
+def patrimonio_neto(activos: float, pasivos: float) -> float:
+    return activos - pasivos
+
+
+def tasa_ahorro(ingresos: float, gastos: float) -> float:
+    return (ingresos - gastos) / ingresos
+
+
+def distribucion_50_30_20(ingresos: float) -> tuple[float, float, float]:
+    return ingresos * 0.5, ingresos * 0.3, ingresos * 0.2
+
+
+def fondo_emergencia_meses(fondo_actual: float, gastos_mensuales: float) -> float:
+    return fondo_actual / gastos_mensuales
+
+
+def fondo_emergencia_objetivo(gastos_mensuales: float, meses_objetivo: float) -> float:
+    return gastos_mensuales * meses_objetivo
+
+
+def meses_para_completar_fondo(fondo_actual: float, objetivo: float, aporte_mensual: float) -> float:
+    return max(objetivo - fondo_actual, 0) / aporte_mensual
+
+
+def aportacion_periodica_necesaria(objetivo: float, capital_inicial: float, tasa: float, periodos: int) -> float:
+    capital_final = interes_compuesto(capital_inicial, tasa, periodos)
+    return (objetivo - capital_final) * tasa / ((1 + tasa) ** periodos - 1)
+
+
+def valor_futuro_aportaciones(aporte: float, tasa: float, periodos: int) -> float:
+    return aporte * ((1 + tasa) ** periodos - 1) / tasa
+
+
+def perfil_inversor(horizonte_anios: float, tolerancia_riesgo: str) -> str:
+    puntaje_horizonte = 0 if horizonte_anios < 3 else 1 if horizonte_anios <= 7 else 2
+    puntaje_tolerancia = {"baja": 0, "media": 1, "alta": 2}[tolerancia_riesgo]
+    puntaje_total = puntaje_horizonte + puntaje_tolerancia
+    if puntaje_total <= 1:
+        return "conservador"
+    if puntaje_total <= 3:
+        return "moderado"
+    return "agresivo"
+
+
+def asignacion_sugerida(perfil: str) -> tuple[float, float, float]:
+    asignaciones = {
+        "conservador": (0.20, 0.60, 0.20),
+        "moderado": (0.50, 0.40, 0.10),
+        "agresivo": (0.80, 0.15, 0.05),
+    }
+    return asignaciones[perfil]
+
+
+def simulacion_dca(precios: list[float], aporte_periodico: float) -> tuple[float, float, float]:
+    unidades_compradas = sum(aporte_periodico / precio for precio in precios)
+    precio_medio = (aporte_periodico * len(precios)) / unidades_compradas
+    valor_final = unidades_compradas * precios[-1]
+    return unidades_compradas, precio_medio, valor_final
+
+
+def intervalo_confianza_normal(media: float, sigma: float, k: float) -> tuple[float, float]:
+    return media - k * sigma, media + k * sigma

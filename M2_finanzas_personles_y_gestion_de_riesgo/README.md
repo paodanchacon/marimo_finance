@@ -80,9 +80,9 @@ herramienta.
 
 | # | Herramienta | Pregunta (título) | Estado |
 |---|---|---|---|
-| 1 | Patrimonio neto | ¿Cuál es tu patrimonio neto real, y cuánto de tu deuda es "buena" vs. "mala"? | 🔲 Diseñada |
-| 2 | Flujo de caja / regla 50-30-20 | ¿Tu presupuesto mensual sigue la regla 50/30/20? | 🔲 Diseñada |
-| 3 | Fondo de emergencia | ¿Cuántos meses de colchón tienes, y cuánto tardarías en cerrar la brecha? | 🔲 Diseñada |
+| 1 | Patrimonio neto | ¿Cuál es tu patrimonio neto real, y cuánto de tu deuda es "buena" vs. "mala"? | ✅ Implementado |
+| 2 | Flujo de caja / regla 50-30-20 | ¿Tu presupuesto mensual sigue la regla 50/30/20? | ✅ Implementado |
+| 3 | Fondo de emergencia | ¿Cuántos meses de colchón tienes, y cuánto tardarías en cerrar la brecha? | ✅ Implementado |
 
 **Paramétricas (sliders manuales, sin DB):**
 

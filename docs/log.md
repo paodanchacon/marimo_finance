@@ -1,5 +1,52 @@
 # Bitácora
 
+## 2026-09-15 — Tema 2: infraestructura DB + Tier 1 herramientas 1-3
+
+- Arranqué el Tema 2 siguiendo el "Orden de trabajo" de su propio README:
+  primero infraestructura, después fórmulas, después las herramientas una
+  por una.
+- Infraestructura: `docker-compose.yml` (MySQL 8, con `db/schema.sql` y
+  `db/seed.sql` montados como scripts de init), tablas `ingresos`, `gastos`
+  (con `categoria` ∈ necesidad/deseo/ahorro) y `patrimonio_neto` (snapshot
+  por fecha), `src/db.py` con un parser manual de `.env` (sin agregar
+  `python-dotenv` como dependencia nueva, según lo que pedía el README) y
+  `get_ingresos()`/`get_gastos()`/`get_patrimonio_neto()` vía
+  `pd.read_sql`. Agregué `sqlalchemy` y `pymysql` con `uv add`. El usuario
+  levantó el contenedor y cargó MySQL Workbench para poder ver/editar los
+  datos directamente. Cargué `db/seed.sql` con 5 meses ficticios
+  (abril-agosto 2026) de ingresos/gastos + 3 snapshots de patrimonio.
+- Agregué las 12 fórmulas del Tier 1 a `formulas.py` (6 alimentadas por DB,
+  6 paramétricas) y las validé todas con casos numéricos antes de tocar el
+  notebook, incluyendo un round-trip entre `aportacion_periodica_necesaria`
+  y `valor_futuro_aportaciones` (dan exacto 10.000 ida y vuelta) y que las 3
+  asignaciones de `asignacion_sugerida` suman 1.0 cada una.
+- Herramienta 1 (patrimonio neto): la tabla `patrimonio_neto` no distingue
+  composición de la deuda, así que agregué un slider de "% de deuda mala"
+  para separar deuda buena/mala del pasivo total del último snapshot, en
+  vez de inventar una fórmula que la DB no puede respaldar. Gráfico de
+  barras agrupadas (activos/pasivos) + línea de patrimonio neto a lo largo
+  de los 3 snapshots.
+- Herramienta 2 (regla 50/30/20): al leer `fecha` desde MySQL vuelve como
+  `datetime.date` (dtype `object`), no `datetime64`, así que `.dt.to_period`
+  no funciona: conté meses distintos con un `set` de tuplas `(year, month)`
+  en vez de la ruta pandas nativa. Promedié ingresos y gastos por categoría
+  sobre esos meses y comparé contra `distribucion_50_30_20`.
+- Herramienta 3 (fondo de emergencia): la DB tampoco tiene una tabla propia
+  para el saldo del fondo, así que lo derivé sumando los gastos con
+  concepto exacto "Aporte fondo de emergencia" (frágil si el usuario carga
+  datos reales con otro texto, pero es lo único que hay en el esquema
+  actual). Usé la `necesidad_real` ya calculada en la Herramienta 2 en vez
+  de recalcularla, reutilizando el dataflow reactivo de marimo entre
+  celdas. Gráfico de proyección de acumulación con línea de objetivo.
+- Corrí `deslop`/`unslop` sobre cada herramienta a medida que la escribía
+  (no al final). Verificado con `marimo check` (0 issues) y
+  `marimo export html` para las 3, comparando los valores renderizados
+  contra los calculados a mano en Python — coinciden exactos.
+- El usuario probó las 3 herramientas en `marimo edit` antes de dar el
+  visto bueno para commitear.
+- Quedan 4 herramientas del Tier 1 (Meta SMART, perfil de inversor, DCA vs.
+  lump sum, distribución normal), todas paramétricas sin DB.
+
 ## 2026-09-10 — Tema 8: Tier 3, volatilidad/neutrales y Calendar Spread
 
 - El Tier 2 seguía sin commitear al arrancar esta sesión (nueva sesión
