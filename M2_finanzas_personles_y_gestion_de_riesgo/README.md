@@ -88,10 +88,10 @@ herramienta.
 
 | # | Herramienta | Pregunta (título) | Estado |
 |---|---|---|---|
-| 4 | Meta SMART | ¿Cuánto tengo que ahorrar cada mes para alcanzar mi objetivo en N años? | 🔲 Diseñada |
-| 5 | Perfil de inversor (mini-quiz) | Según tu horizonte y tolerancia al riesgo, ¿qué perfil eres y qué mezcla de activos te conviene? | 🔲 Diseñada |
-| 6 | DCA vs. inversión única | ¿Conviene invertir todo de una vez o repartirlo en aportaciones periódicas? | 🔲 Diseñada |
-| 7 | Distribución normal y regla 68-95-99.7 | Dada la rentabilidad media y volatilidad, ¿en qué rango se moverá el resultado? | 🔲 Diseñada |
+| 4 | Meta SMART | ¿Cuánto tengo que ahorrar cada mes para alcanzar mi objetivo en N años? | ✅ Implementado |
+| 5 | Perfil de inversor (mini-quiz) | Según tu horizonte y tolerancia al riesgo, ¿qué perfil eres y qué mezcla de activos te conviene? | ✅ Implementado |
+| 6 | DCA vs. inversión única | ¿Conviene invertir todo de una vez o repartirlo en aportaciones periódicas? | ✅ Implementado |
+| 7 | Distribución normal y regla 68-95-99.7 | Dada la rentabilidad media y volatilidad, ¿en qué rango se moverá el resultado? | ✅ Implementado |
 
 ## Tier 2: Complementarias (Bloque 1, fiscalidad)
 

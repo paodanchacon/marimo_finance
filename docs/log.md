@@ -1,5 +1,44 @@
 # Bitácora
 
+## 2026-09-17 — Tema 2: Tier 1 completo, herramientas 4-7 (paramétricas)
+
+- Cerré el Tier 1 del Tema 2 con las 4 herramientas paramétricas restantes,
+  todas en `notebooks/02_finanzas_personales.py`: Meta SMART (aporte mensual
+  necesario vía `aportacion_periodica_necesaria`, con tasa anual convertida a
+  mensual efectiva), Perfil de inversor (mini-quiz de horizonte + tolerancia,
+  gráfico de torta con `asignacion_sugerida`), DCA vs. inversión única
+  (reutiliza `simular_precios_gbm` del Tema 8 muestreando un precio cada 30
+  días para simular aportes mensuales, con slider de semilla para repetir o
+  variar el escenario) y Distribución normal / regla 68-95-99.7.
+- El usuario probó cada herramienta en `marimo edit` a medida que la iba
+  agregando y encontró 2 problemas reales que no había visto en mi propia
+  verificación con `marimo check`/`export html`:
+  - En la Herramienta 7, el gráfico solo sombreaba la banda de 3σ (que ya
+    cubre casi toda la curva visible), así que no había forma de ver ahí las
+    bandas de 1σ y 2σ que sí mencionaba el texto de conclusión. Corregido
+    sombreando las 3 bandas anidadas con la misma opacidad cada una, de
+    forma que se superponen y la zona de 1σ queda visualmente más oscura
+    (más probable) que la de 3σ.
+  - Pidió aclarar qué es la "densidad de probabilidad" del eje Y y por qué
+    las bandas se muestran como áreas y no como puntos sobre la curva.
+    Agregué esa aclaración tanto en la teoría de arriba como, a pedido
+    explícito, pegada a las conclusiones (con la lectura de los ejes X e Y
+    del gráfico específico de esta herramienta).
+- Aparte, al agregar la explicación de la semilla en la Herramienta 6 me
+  encontré con que se había perdido: la sesión de `marimo edit` del usuario
+  tenía en memoria una copia de antes de mi edición, y al autoguardar
+  sobrescribió el archivo en disco. Volví a aplicar el cambio y le avisé que
+  cierre/reabra la pestaña del navegador antes de que yo edite, para que no
+  se repita.
+- Verificado con `marimo check` (0 issues) y `marimo export html` para las 4
+  herramientas nuevas, comparando contra valores calculados a mano en Python
+  antes de tocar el notebook (incluyendo un round-trip de Meta SMART y la
+  reconstrucción exacta de las 3 bandas de la Herramienta 7 en €).
+- Con esto, **el Tier 1 completo del Tema 2 (las 7 herramientas) queda
+  terminado**. Sigue pendiente decidir Tier 2 (fiscalidad, tributación de
+  ganancias) o pasar a los Bloques 4-5 (VaR, Markowitz, Sharpe, Kelly),
+  marcados como "sesión futura" en el README del tema.
+
 ## 2026-09-15 — Tema 2: infraestructura DB + Tier 1 herramientas 1-3
 
 - Arranqué el Tema 2 siguiendo el "Orden de trabajo" de su propio README:
