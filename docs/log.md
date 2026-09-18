@@ -1,6 +1,6 @@
 # Bitácora
 
-## 2026-09-18 — Tema 3: diseño del módulo + Tier 1 y Tier 2
+## 2026-09-18 — Tema 3: diseño del módulo + Tier 1, Tier 2 y Tier 3 (completo)
 
 - Revisé el material fuente de `M3_inversion_inmobiliaria/` (temario del
   curso + apunte de repaso) y armé el `README.md` del módulo: decisiones de
@@ -29,8 +29,19 @@
   habitaciones, turístico, flipping y promoción), con los rangos citados
   en el apunte del curso.
 - Usuario probó ambas herramientas en `marimo edit` y confirmó.
-- Próximo paso: Tier 3 (rent gap por zona y ratio precio/alquiler como
-  termómetro de burbuja), si se decide continuar.
+- Agregué `rent_gap` y `ratio_precio_alquiler_zona` a `src/formulas.py` y
+  cerré el Tema 3 con las 2 herramientas del Tier 3: rent gap por zona
+  (con una señal complementaria de subida de alquiler) y ratio precio/
+  alquiler como termómetro de burbuja (comparador contra una referencia
+  España ~30x / China ~60x, tomada del apunte del curso).
+- De paso, quité `capacidad_endeudamiento_maxima` de `src/formulas.py`,
+  que había quedado sin usar tras la versión final de la Herramienta 3.
+- Usuario probó las 8 herramientas completas en `marimo edit` y confirmó.
+  Con esto, el Tema 3 (inversión inmobiliaria) queda completo: los 3
+  tiers definidos en el `README.md` del módulo están implementados.
+- Próximo paso: a decidir con el usuario cuál es el siguiente tema a
+  encarar (Tema 4: análisis geopolítico, o algún Tier 2/3 pendiente de
+  los Temas 1 y 2).
 
 ## 2026-09-17 — Tema 2: Tier 1 completo, herramientas 4-7 (paramétricas)
 

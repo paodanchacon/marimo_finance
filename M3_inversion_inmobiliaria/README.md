@@ -103,8 +103,8 @@ herramienta.
 
 | # | Herramienta | Pregunta (título) | Fórmulas | Estado |
 |---|---|---|---|---|
-| 7 | Rent gap por zona | Dado el precio actual y el valor potencial si la zona se renovara, ¿hay una señal temprana de gentrificación? | `rent_gap` | 🔲 Pendiente |
-| 8 | Ratio precio/alquiler como termómetro de burbuja | Comparado con el rango histórico razonable, ¿el precio de esta zona/país está desconectado del alquiler que genera? | `ratio_precio_alquiler_zona` | 🔲 Pendiente |
+| 7 | Rent gap por zona | Dado el precio actual y el valor potencial si la zona se renovara, ¿hay una señal temprana de gentrificación? | `rent_gap` | ✅ Implementada |
+| 8 | Ratio precio/alquiler como termómetro de burbuja | Comparado con el rango histórico razonable, ¿el precio de esta zona/país está desconectado del alquiler que genera? | `ratio_precio_alquiler_zona` | ✅ Implementada |
 
 ## Sin herramienta: queda como teoría en markdown
 

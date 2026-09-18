@@ -21,6 +21,8 @@ def _():
         entrada_minima_hipoteca,
         multiplo_precio_alquiler,
         precio_maximo_sugerido,
+        ratio_precio_alquiler_zona,
+        rent_gap,
         rentabilidad_alquiler_habitaciones,
         rentabilidad_anualizada_flipping,
         rentabilidad_bruta_alquiler,
@@ -37,6 +39,8 @@ def _():
         mo,
         multiplo_precio_alquiler,
         precio_maximo_sugerido,
+        ratio_precio_alquiler_zona,
+        rent_gap,
         rentabilidad_alquiler_habitaciones,
         rentabilidad_anualizada_flipping,
         rentabilidad_bruta_alquiler,
@@ -823,6 +827,201 @@ def _(maximos, minimos, mo, modelos, objetivo_comparador_slider):
         cuenta que ahí también sube el riesgo, el capital y la experiencia
         requerida: no es una escala donde simplemente "elegís" más
         rentabilidad sin asumir nada a cambio.
+        """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Rent gap: la señal temprana de gentrificación
+
+    El rent gap es la diferencia entre el valor que tendría un barrio si
+    estuviera plenamente renovado y su valor actual, todavía depreciado. No
+    es un fenómeno espontáneo: aparece después de largos periodos de
+    desinversión, cuando ese potencial no realizado se vuelve lo bastante
+    grande como para empezar a atraer capital.
+
+    Algunas señales que suelen acompañar un rent gap real: precios un
+    30%-40% inferiores a los de zonas colindantes ya consolidadas, vivienda
+    antigua con potencial de rehabilitación, aparición de nuevos comercios,
+    y un patrón particularmente revelador, que el alquiler empiece a subir
+    antes que el precio de venta.
+
+    $$Rent\ gap = Valor\ potencial\ renovado - Valor\ actual$$
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Herramienta 7: dado el precio actual y el valor potencial si la zona se renovara, ¿hay una señal temprana de gentrificación?
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    valor_actual_slider = mo.ui.number(
+        start=50_000, stop=600_000, step=5_000, value=120_000,
+        label="Valor actual en esta zona (€)",
+    )
+    valor_consolidado_slider = mo.ui.number(
+        start=50_000, stop=800_000, step=5_000, value=170_000,
+        label="Valor en una zona colindante ya consolidada (€)",
+    )
+    subida_alquiler_slider = mo.ui.slider(
+        start=0.0, stop=0.30, step=0.01, value=0.05,
+        label="Subida del alquiler en esta zona en el último año",
+        show_value=True,
+    )
+    mo.hstack([valor_actual_slider, valor_consolidado_slider, subida_alquiler_slider])
+    return subida_alquiler_slider, valor_actual_slider, valor_consolidado_slider
+
+
+@app.cell
+def _(rent_gap, valor_actual_slider, valor_consolidado_slider):
+    gap = rent_gap(valor_consolidado_slider.value, valor_actual_slider.value)
+    gap_pct = gap / valor_actual_slider.value
+    return gap, gap_pct
+
+
+@app.cell
+def _(go, valor_actual_slider, valor_consolidado_slider):
+    fig_rent_gap = go.Figure(
+        go.Bar(
+            x=["Valor actual", "Valor potencial (zona consolidada)"],
+            y=[valor_actual_slider.value, valor_consolidado_slider.value],
+        )
+    )
+    fig_rent_gap.update_layout(title="Rent gap: valor actual vs. valor potencial", yaxis_title="€")
+    fig_rent_gap
+    return
+
+
+@app.cell
+def _(gap, gap_pct, mo, subida_alquiler_slider):
+    if gap_pct >= 0.30:
+        senal_gap = "una señal clara de rent gap, dentro del rango 30%-40% que suele preceder a la revalorización"
+    else:
+        senal_gap = "un rent gap todavía moderado, por debajo del rango que suele preceder a la revalorización"
+
+    if subida_alquiler_slider.value >= 0.08:
+        confirmacion_alquiler = (
+            "y el alquiler ya está subiendo con fuerza, el patrón más revelador de que el proceso ya empezó."
+        )
+    else:
+        confirmacion_alquiler = "y el alquiler todavía no muestra una subida fuerte que confirme el proceso."
+
+    mo.md(
+        f"""
+        Esta zona tiene un rent gap de **{gap:,.0f} €**, un **{gap_pct:.0%}** por
+        debajo de una zona colindante ya consolidada: {senal_gap},
+        {confirmacion_alquiler}
+        """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Ratio precio/alquiler como termómetro de burbuja
+
+    La relación entre el precio de compra y el alquiler anual que genera un
+    inmueble es una de las formas más simples de detectar si el precio de
+    una zona o un país se desconectó del valor de uso real del activo.
+    Cuando ese ratio se dispara muy por encima de lo razonable, el precio
+    deja de reflejar lo que el inmueble puede rendir como alquiler y pasa a
+    depender de la expectativa de que otro lo pague todavía más caro.
+
+    El caso de China es el ejemplo de manual: la relación entre alquiler y
+    precio ronda el 60 a 1, muy alejada del valor de uso. En España, en
+    cambio, esa relación se mueve en línea con Europa y no se cumplen los
+    rasgos de una burbuja generalizada, aunque puedan existir excesos
+    puntuales en zonas concretas.
+
+    $$Ratio = \frac{Precio\ de\ compra}{Alquiler\ anual}$$
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Herramienta 8: comparado con un rango histórico razonable, ¿el precio de esta zona está desconectado del alquiler que genera?
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    precio_compra_burbuja_slider = mo.ui.number(
+        start=50_000, stop=800_000, step=5_000, value=150_000, label="Precio de compra (€)"
+    )
+    alquiler_mensual_burbuja_slider = mo.ui.number(
+        start=300, stop=3_000, step=50, value=900, label="Alquiler mensual (€)"
+    )
+    referencia_zona_dropdown = mo.ui.dropdown(
+        options={"España (referencia ~30x)": 30, "China (referencia ~60x)": 60},
+        value="España (referencia ~30x)",
+        label="Referencia a comparar",
+    )
+    mo.hstack(
+        [precio_compra_burbuja_slider, alquiler_mensual_burbuja_slider, referencia_zona_dropdown]
+    )
+    return alquiler_mensual_burbuja_slider, precio_compra_burbuja_slider, referencia_zona_dropdown
+
+
+@app.cell
+def _(
+    alquiler_mensual_burbuja_slider,
+    precio_compra_burbuja_slider,
+    ratio_precio_alquiler_zona,
+):
+    ratio_zona = ratio_precio_alquiler_zona(
+        precio_compra_burbuja_slider.value, alquiler_mensual_burbuja_slider.value * 12
+    )
+    return (ratio_zona,)
+
+
+@app.cell
+def _(go, ratio_zona, referencia_zona_dropdown):
+    fig_burbuja = go.Figure(
+        go.Bar(
+            x=["Este inmueble", "Referencia elegida"],
+            y=[ratio_zona, referencia_zona_dropdown.value],
+        )
+    )
+    fig_burbuja.update_layout(
+        title="Ratio precio/alquiler anual: este inmueble vs. la referencia",
+        yaxis_title="Veces el alquiler anual",
+    )
+    fig_burbuja
+    return
+
+
+@app.cell
+def _(mo, ratio_zona, referencia_zona_dropdown):
+    if ratio_zona > referencia_zona_dropdown.value:
+        lectura_burbuja = "por encima de la referencia elegida: el precio está más desconectado del alquiler que genera."
+    else:
+        lectura_burbuja = "en línea o por debajo de la referencia elegida: no hay una señal de desconexión evidente."
+
+    mo.md(
+        f"""
+        Este inmueble vale **{ratio_zona:.1f} veces** su alquiler anual,
+        {lectura_burbuja}
+
+        Este ratio es un termómetro rápido, no un diagnóstico: no existe una
+        única teoría de las burbujas, y detectar señales de riesgo no es lo
+        mismo que predecir cuándo va a ajustar el precio.
         """
     )
     return

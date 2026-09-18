@@ -561,3 +561,11 @@ def rentabilidad_alquiler_habitaciones(
     return rentabilidad_neta_alquiler(
         precio_compra, gastos_compra, alquiler_total_mensual, gastos_anuales, ocupacion
     )
+
+
+def rent_gap(valor_potencial_renovado: float, valor_actual: float) -> float:
+    return valor_potencial_renovado - valor_actual
+
+
+def ratio_precio_alquiler_zona(precio_compra: float, alquiler_anual: float) -> float:
+    return precio_compra / alquiler_anual
