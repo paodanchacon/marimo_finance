@@ -1,6 +1,6 @@
 # Bitácora
 
-## 2026-09-18 — Tema 3: diseño del módulo + Tier 1 (alquiler, financiación y flipping)
+## 2026-09-18 — Tema 3: diseño del módulo + Tier 1 y Tier 2
 
 - Revisé el material fuente de `M3_inversion_inmobiliaria/` (temario del
   curso + apunte de repaso) y armé el `README.md` del módulo: decisiones de
@@ -21,8 +21,16 @@
   neto y rentabilidad anualizada).
 - Probé el notebook con `marimo export html` antes de pasarlo; el usuario
   lo confirmó en `marimo edit`.
-- Próximo paso: Tier 2 (comparador de alquiler por habitaciones vs.
-  tradicional, y comparador de rentabilidad esperada por modelo).
+- Agregué `rentabilidad_alquiler_habitaciones` a `src/formulas.py`
+  (reutiliza `rentabilidad_neta_alquiler` sumando las rentas de las
+  habitaciones) y sumé las 2 herramientas del Tier 2 al notebook: alquiler
+  por habitaciones vs. tradicional, y un comparador de rangos de
+  rentabilidad esperada por modelo (alquiler tradicional, por
+  habitaciones, turístico, flipping y promoción), con los rangos citados
+  en el apunte del curso.
+- Usuario probó ambas herramientas en `marimo edit` y confirmó.
+- Próximo paso: Tier 3 (rent gap por zona y ratio precio/alquiler como
+  termómetro de burbuja), si se decide continuar.
 
 ## 2026-09-17 — Tema 2: Tier 1 completo, herramientas 4-7 (paramétricas)
 

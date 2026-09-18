@@ -525,10 +525,6 @@ def precio_maximo_sugerido(alquiler_mensual: float, multiplo_objetivo: float) ->
     return alquiler_mensual * multiplo_objetivo
 
 
-def capacidad_endeudamiento_maxima(ingresos_mensuales: float, tasa_esfuerzo_maxima: float) -> float:
-    return ingresos_mensuales * tasa_esfuerzo_maxima
-
-
 def entrada_minima_hipoteca(precio_compra: float, gastos_compra: float, ltv_maximo: float) -> float:
     return precio_compra * (1 - ltv_maximo) + gastos_compra
 
@@ -552,3 +548,16 @@ def beneficio_neto_flipping(
 def rentabilidad_anualizada_flipping(beneficio_neto: float, capital_invertido: float, meses: float) -> float:
     valor_final = capital_invertido + beneficio_neto
     return cagr(capital_invertido, valor_final, meses / 12)
+
+
+def rentabilidad_alquiler_habitaciones(
+    precio_compra: float,
+    gastos_compra: float,
+    alquileres_habitaciones: list[float],
+    gastos_anuales: float,
+    ocupacion: float,
+) -> float:
+    alquiler_total_mensual = sum(alquileres_habitaciones)
+    return rentabilidad_neta_alquiler(
+        precio_compra, gastos_compra, alquiler_total_mensual, gastos_anuales, ocupacion
+    )

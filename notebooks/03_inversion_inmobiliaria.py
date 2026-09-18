@@ -16,12 +16,12 @@ def _():
 
     from src.formulas import (
         beneficio_neto_flipping,
-        capacidad_endeudamiento_maxima,
         cash_flow_mensual_alquiler,
         cuota_francesa,
         entrada_minima_hipoteca,
         multiplo_precio_alquiler,
         precio_maximo_sugerido,
+        rentabilidad_alquiler_habitaciones,
         rentabilidad_anualizada_flipping,
         rentabilidad_bruta_alquiler,
         rentabilidad_capital_propio,
@@ -37,6 +37,7 @@ def _():
         mo,
         multiplo_precio_alquiler,
         precio_maximo_sugerido,
+        rentabilidad_alquiler_habitaciones,
         rentabilidad_anualizada_flipping,
         rentabilidad_bruta_alquiler,
         rentabilidad_capital_propio,
@@ -589,6 +590,241 @@ def _(
     para el house flipping: compará este resultado contra esa referencia antes
     de decidir.
     """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # Alquiler por habitaciones vs. alquiler tradicional
+
+    El alquiler por habitaciones fragmenta el uso de un mismo inmueble:
+    en vez de alquilar la vivienda completa a un único inquilino, alquilás
+    cada habitación por separado y compartís cocina, baños y salón. La suma
+    de las rentas individuales suele superar con claridad el alquiler de la
+    vivienda completa.
+
+    A cambio, la gestión es más compleja: más inquilinos significa más
+    rotación, más incidencias y una ocupación real algo menor que en el
+    alquiler tradicional. Por eso este modelo solo compensa cuando la mejora
+    de rentabilidad es clara. Si es pequeña, el tiempo y las incidencias
+    extra no se justifican: la referencia habitual es que el alquiler por
+    habitaciones sea interesante cuando alcanza rentabilidades cercanas o
+    superiores al 20%.
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Herramienta 5: ¿compensa alquilar por habitaciones en vez de la vivienda completa?
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    precio_compra_hab_slider = mo.ui.number(
+        start=50_000, stop=600_000, step=5_000, value=150_000, label="Precio de compra (€)"
+    )
+    n_habitaciones_slider = mo.ui.slider(start=2, stop=6, step=1, value=4, label="Número de habitaciones", show_value=True)
+    alquiler_habitacion_slider = mo.ui.number(
+        start=200, stop=800, step=25, value=350, label="Alquiler por habitación (€/mes)"
+    )
+    gastos_anuales_hab_slider = mo.ui.number(
+        start=0, stop=8_000, step=100, value=2_200,
+        label="Gastos anuales: IBI, comunidad, seguros, mantenimiento (€)",
+    )
+    ocupacion_hab_slider = mo.ui.slider(
+        start=0.70, stop=1.0, step=0.01, value=0.90, label="Ocupación estimada", show_value=True
+    )
+    mo.hstack(
+        [
+            precio_compra_hab_slider,
+            n_habitaciones_slider,
+            alquiler_habitacion_slider,
+            gastos_anuales_hab_slider,
+            ocupacion_hab_slider,
+        ]
+    )
+    return (
+        alquiler_habitacion_slider,
+        gastos_anuales_hab_slider,
+        n_habitaciones_slider,
+        ocupacion_hab_slider,
+        precio_compra_hab_slider,
+    )
+
+
+@app.cell
+def _(
+    alquiler_habitacion_slider,
+    gastos_anuales_hab_slider,
+    n_habitaciones_slider,
+    ocupacion_hab_slider,
+    precio_compra_hab_slider,
+    rentabilidad_alquiler_habitaciones,
+    rentabilidad_neta_alquiler,
+):
+    gastos_compra_hab = precio_compra_hab_slider.value * 0.10
+
+    alquileres_habitaciones = [alquiler_habitacion_slider.value] * n_habitaciones_slider.value
+    rentabilidad_habitaciones = rentabilidad_alquiler_habitaciones(
+        precio_compra_hab_slider.value,
+        gastos_compra_hab,
+        alquileres_habitaciones,
+        gastos_anuales_hab_slider.value,
+        ocupacion_hab_slider.value,
+    )
+
+    alquiler_vivienda_completa = alquiler_habitacion_slider.value * n_habitaciones_slider.value * 0.7
+    rentabilidad_tradicional_comparable = rentabilidad_neta_alquiler(
+        precio_compra_hab_slider.value,
+        gastos_compra_hab,
+        alquiler_vivienda_completa,
+        gastos_anuales_hab_slider.value,
+        ocupacion_hab_slider.value,
+    )
+    return rentabilidad_habitaciones, rentabilidad_tradicional_comparable
+
+
+@app.cell
+def _(go, rentabilidad_habitaciones, rentabilidad_tradicional_comparable):
+    fig_habitaciones = go.Figure(
+        go.Bar(
+            x=["Alquiler tradicional (vivienda completa)", "Alquiler por habitaciones"],
+            y=[rentabilidad_tradicional_comparable, rentabilidad_habitaciones],
+        )
+    )
+    fig_habitaciones.update_layout(
+        title="Rentabilidad neta: vivienda completa vs. por habitaciones",
+        yaxis_title="% anual",
+        yaxis_tickformat=".1%",
+    )
+    fig_habitaciones
+    return
+
+
+@app.cell
+def _(mo, rentabilidad_habitaciones, rentabilidad_tradicional_comparable):
+    diferencia_habitaciones = rentabilidad_habitaciones - rentabilidad_tradicional_comparable
+    veredicto_habitaciones = (
+        "sí compensa" if diferencia_habitaciones >= 0.03 else "no está claro que compense"
+    )
+
+    mo.md(
+        f"""
+        Alquilando por habitaciones, la rentabilidad neta es del
+        **{rentabilidad_habitaciones:.1%}**, contra un **{rentabilidad_tradicional_comparable:.1%}**
+        si alquilaras la vivienda completa a un único inquilino (asumiendo un
+        alquiler de vivienda completa equivalente al 70% de la suma de las
+        habitaciones, un supuesto razonable, no un dato del curso).
+
+        Con una diferencia de **{diferencia_habitaciones:.1%}**, dado el esfuerzo
+        extra de gestión que exige tener varios inquilinos, {veredicto_habitaciones}.
+        """
+    )
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md(r"""
+    ---
+
+    # ¿Cuánta rentabilidad esperar según el modelo?
+
+    No existe una rentabilidad "correcta" universal: depende del modelo
+    elegido, del riesgo asumido, del capital disponible y de la experiencia.
+    Pretender rentabilidades altas con bajo riesgo suele llevar a decisiones
+    equivocadas. Los rangos de abajo son los que cita el apunte del curso
+    para cada modelo.
+
+    El alquiler tradicional y el alquiler por habitaciones son rentabilidades
+    anuales recurrentes. El house flipping y la promoción, en cambio, son
+    rentabilidades por proyecto (no anuales): una operación de flipping bien
+    ejecutada dura unos meses, no un año completo, así que no se comparan
+    directamente sin anualizar (ver Herramienta 4).
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    mo.md("""
+    ## Herramienta 6: según el modelo elegido, ¿qué rango de rentabilidad debo esperar?
+    """)
+    return
+
+
+@app.cell
+def _(mo):
+    objetivo_comparador_slider = mo.ui.slider(
+        start=0.0, stop=0.40, step=0.01, value=0.10,
+        label="Tu rentabilidad objetivo (para marcarla en el gráfico)",
+        show_value=True,
+    )
+    objetivo_comparador_slider
+    return (objetivo_comparador_slider,)
+
+
+@app.cell
+def _(go, objetivo_comparador_slider):
+    modelos = [
+        "Alquiler tradicional (anual)",
+        "Alquiler por habitaciones (anual)",
+        "Alquiler turístico (anual)",
+        "House flipping (por proyecto)",
+        "Promoción (por proyecto)",
+    ]
+    minimos = [0.04, 0.08, 0.10, 0.20, 0.20]
+    maximos = [0.08, 0.12, 0.20, 0.30, 0.40]
+    rangos = [maximo - minimo for minimo, maximo in zip(minimos, maximos)]
+
+    fig_comparador = go.Figure(go.Bar(x=modelos, y=rangos, base=minimos))
+    fig_comparador.add_hline(
+        y=objetivo_comparador_slider.value,
+        line_dash="dash",
+        annotation_text="Tu objetivo",
+        annotation_position="top left",
+    )
+    fig_comparador.update_layout(
+        title="Rango de rentabilidad esperada por modelo (según el apunte del curso)",
+        yaxis_title="Rentabilidad",
+        yaxis_tickformat=".0%",
+    )
+    fig_comparador
+    return maximos, minimos, modelos
+
+
+@app.cell
+def _(maximos, minimos, mo, modelos, objetivo_comparador_slider):
+    objetivo = objetivo_comparador_slider.value
+    modelos_dentro_de_rango = [
+        modelo
+        for modelo, minimo, maximo in zip(modelos, minimos, maximos)
+        if minimo <= objetivo <= maximo
+    ]
+
+    if modelos_dentro_de_rango:
+        texto_modelos = ", ".join(modelos_dentro_de_rango)
+        conclusion_comparador = f"encaja con: {texto_modelos}."
+    else:
+        conclusion_comparador = "no encaja de lleno con ninguno de estos rangos de referencia."
+
+    mo.md(
+        f"""
+        Con un objetivo del **{objetivo:.0%}**, tu expectativa {conclusion_comparador}
+
+        Si tu objetivo cae en un rango más alto (flipping, promoción), tené en
+        cuenta que ahí también sube el riesgo, el capital y la experiencia
+        requerida: no es una escala donde simplemente "elegís" más
+        rentabilidad sin asumir nada a cambio.
+        """
+    )
     return
 
 

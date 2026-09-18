@@ -58,7 +58,6 @@ sugeridos, no como verdad absoluta.
 
 | Función | Firma | Uso | Fuente del criterio |
 |---|---|---|---|
-| `capacidad_endeudamiento_maxima` | `(ingresos_mensuales, tasa_esfuerzo_maxima=0.35) -> float` | Cuota máxima asumible según ingresos | Apunte: referencia 35% de esfuerzo |
 | `entrada_minima_hipoteca` | `(precio_compra, gastos_compra, ltv_maximo=0.8) -> float` | Capital propio mínimo necesario (banco financia 70-80%) | Apunte: referencia LTV 70-80% |
 | `rentabilidad_capital_propio` | `(cash_flow_anual, revalorizacion_anual, capital_propio) -> float` | ROE inmobiliario: rentabilidad sobre lo realmente puesto, no sobre el precio total (reutiliza el concepto de `roe`) | Apunte (bloque 5, "la financiación amplifica resultados") |
 
@@ -88,17 +87,17 @@ herramienta.
 
 | # | Herramienta | Pregunta (título) | Fórmulas | Estado |
 |---|---|---|---|---|
-| 1 | Rentabilidad de alquiler: bruta vs. neta vs. cash flow | ¿Me conviene comprar este piso para alquilarlo, una vez descontados gastos y meses vacíos? | `rentabilidad_bruta_alquiler`, `rentabilidad_neta_alquiler`, `cash_flow_mensual_alquiler` | 🔲 Pendiente |
-| 2 | Precio máximo según alquiler esperado | Según lo que puedo cobrar de alquiler, ¿estoy pagando de más por este piso? | `multiplo_precio_alquiler`, `precio_maximo_sugerido` | 🔲 Pendiente |
-| 3 | Hipoteca y apalancamiento | ¿Cuánto mejora (o empeora) mi rentabilidad si financio la compra en vez de pagar al contado? | `entrada_minima_hipoteca`, `capacidad_endeudamiento_maxima`, `rentabilidad_capital_propio`, reutiliza `cuota_francesa` | 🔲 Pendiente |
-| 4 | House flipping (CRV) | Esta operación de comprar, reformar y vender, ¿merece la pena, y en cuánto tiempo? | `beneficio_neto_flipping`, `rentabilidad_anualizada_flipping` | 🔲 Pendiente |
+| 1 | Rentabilidad de alquiler: bruta vs. neta vs. cash flow | ¿Me conviene comprar este piso para alquilarlo, una vez descontados gastos y meses vacíos? | `rentabilidad_bruta_alquiler`, `rentabilidad_neta_alquiler`, `cash_flow_mensual_alquiler` | ✅ Implementada |
+| 2 | Precio máximo según alquiler esperado | Según lo que puedo cobrar de alquiler, ¿estoy pagando de más por este piso? | `multiplo_precio_alquiler`, `precio_maximo_sugerido` | ✅ Implementada |
+| 3 | Hipoteca y apalancamiento | ¿Cuánto mejora (o empeora) mi rentabilidad si financio la compra en vez de pagar al contado? | `entrada_minima_hipoteca`, `rentabilidad_capital_propio`, reutiliza `cuota_francesa` | ✅ Implementada |
+| 4 | House flipping (CRV) | Esta operación de comprar, reformar y vender, ¿merece la pena, y en cuánto tiempo? | `beneficio_neto_flipping`, `rentabilidad_anualizada_flipping` | ✅ Implementada |
 
 ## Tier 2: Comparadores
 
 | # | Herramienta | Pregunta (título) | Fórmulas | Estado |
 |---|---|---|---|---|
-| 5 | Alquiler por habitaciones vs. tradicional | ¿Compensa alquilar por habitaciones en vez de la vivienda completa, dado el esfuerzo extra de gestión? | `rentabilidad_alquiler_habitaciones` (compara contra la herramienta 1) | 🔲 Pendiente |
-| 6 | Comparador de rentabilidad esperada por modelo | Según el modelo elegido (alquiler tradicional, habitaciones, turístico, flipping, promoción), ¿qué rango de rentabilidad y de riesgo debo esperar? | Sin fórmula nueva: tabla de rangos citados en el apunte (bloque 6.3), visualizada como gráfico de barras con rango min-max | 🔲 Pendiente |
+| 5 | Alquiler por habitaciones vs. tradicional | ¿Compensa alquilar por habitaciones en vez de la vivienda completa, dado el esfuerzo extra de gestión? | `rentabilidad_alquiler_habitaciones` (compara contra la herramienta 1) | ✅ Implementada |
+| 6 | Comparador de rentabilidad esperada por modelo | Según el modelo elegido (alquiler tradicional, habitaciones, turístico, flipping, promoción), ¿qué rango de rentabilidad y de riesgo debo esperar? | Sin fórmula nueva: tabla de rangos citados en el apunte (bloque 6.3), visualizada como gráfico de barras con rango min-max | ✅ Implementada |
 
 ## Tier 3: Screening (sesión futura, opcional)
 
