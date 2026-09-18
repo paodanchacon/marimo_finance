@@ -1,5 +1,29 @@
 # Bitácora
 
+## 2026-09-18 — Tema 3: diseño del módulo + Tier 1 (alquiler, financiación y flipping)
+
+- Revisé el material fuente de `M3_inversion_inmobiliaria/` (temario del
+  curso + apunte de repaso) y armé el `README.md` del módulo: decisiones de
+  diseño, fórmulas nuevas propuestas y las herramientas organizadas en Tier
+  1/2/3, con los benchmarks numéricos del apunte (múltiplo 120-150x,
+  ocupación 96%, LTV 70-80%, esfuerzo 35%, rangos de rentabilidad por
+  modelo).
+- Agregué a `src/formulas.py` las 10 fórmulas del Tier 1: rentabilidad
+  bruta/neta de alquiler, cash flow mensual, múltiplo y precio máximo
+  precio/alquiler, capacidad de endeudamiento, entrada mínima de hipoteca,
+  rentabilidad sobre capital propio, beneficio neto y rentabilidad
+  anualizada de house flipping (reutiliza `cuota_francesa` y `cagr` de
+  temas anteriores).
+- Armé `notebooks/03_inversion_inmobiliaria.py` con las 4 herramientas del
+  Tier 1: rentabilidad de alquiler (bruta/neta/cash flow), precio máximo
+  según el múltiplo alquiler, hipoteca y apalancamiento (rentabilidad sobre
+  capital propio con y sin financiación) y house flipping (CRV, beneficio
+  neto y rentabilidad anualizada).
+- Probé el notebook con `marimo export html` antes de pasarlo; el usuario
+  lo confirmó en `marimo edit`.
+- Próximo paso: Tier 2 (comparador de alquiler por habitaciones vs.
+  tradicional, y comparador de rentabilidad esperada por modelo).
+
 ## 2026-09-17 — Tema 2: Tier 1 completo, herramientas 4-7 (paramétricas)
 
 - Cerré el Tier 1 del Tema 2 con las 4 herramientas paramétricas restantes,

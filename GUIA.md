@@ -1,7 +1,7 @@
 # Guía del proyecto: Finanzas Personales (marimo + SQL)
 
 > Documento vivo. Se actualiza a medida que avanzamos tema por tema.
-> Última actualización: 2026-09-17
+> Última actualización: 2026-09-18
 
 ## 1. Objetivo
 
@@ -82,7 +82,7 @@ en `notebooks/` y `src/`.
 |---|---|---|---|
 | 1 | Conceptos teóricos esenciales | 🔄 Tier 1 completo, Tier 2/3 sin decidir | [`M1_conceptos_teoricos_esenciales/README.md`](M1_conceptos_teoricos_esenciales/README.md) |
 | 2 | Finanzas personales y gestión del riesgo | 🔄 Tier 1 completo (7/7), Tier 2/Bloques 4-5 sin decidir | [`M2_finanzas_personles_y_gestion_de_riesgo/README.md`](M2_finanzas_personles_y_gestion_de_riesgo/README.md) |
-| 3 | Inversión inmobiliaria | 🔲 Pendiente | - |
+| 3 | Inversión inmobiliaria | 🔄 Tier 1 completo (4/4), Tier 2/3 sin decidir | [`M3_inversion_inmobiliaria/README.md`](M3_inversion_inmobiliaria/README.md) |
 | 4 | Análisis geopolítico para la inversión | 🔲 Pendiente | - |
 | 5 | Renta variable (bolsa) | 🔲 Pendiente | - |
 | 6 | Renta fija | 🔲 Pendiente | - |

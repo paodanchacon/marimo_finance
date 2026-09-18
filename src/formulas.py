@@ -494,3 +494,61 @@ def simulacion_dca(precios: list[float], aporte_periodico: float) -> tuple[float
 
 def intervalo_confianza_normal(media: float, sigma: float, k: float) -> tuple[float, float]:
     return media - k * sigma, media + k * sigma
+
+
+def rentabilidad_bruta_alquiler(precio_compra: float, gastos_compra: float, alquiler_mensual: float) -> float:
+    return (alquiler_mensual * 12) / (precio_compra + gastos_compra)
+
+
+def rentabilidad_neta_alquiler(
+    precio_compra: float,
+    gastos_compra: float,
+    alquiler_mensual: float,
+    gastos_anuales: float,
+    ocupacion: float,
+) -> float:
+    ingresos_reales = alquiler_mensual * 12 * ocupacion
+    return (ingresos_reales - gastos_anuales) / (precio_compra + gastos_compra)
+
+
+def cash_flow_mensual_alquiler(
+    alquiler_mensual: float, gastos_mensuales: float, cuota_hipoteca: float, ocupacion: float
+) -> float:
+    return alquiler_mensual * ocupacion - gastos_mensuales - cuota_hipoteca
+
+
+def multiplo_precio_alquiler(precio_compra: float, alquiler_mensual: float) -> float:
+    return precio_compra / alquiler_mensual
+
+
+def precio_maximo_sugerido(alquiler_mensual: float, multiplo_objetivo: float) -> float:
+    return alquiler_mensual * multiplo_objetivo
+
+
+def capacidad_endeudamiento_maxima(ingresos_mensuales: float, tasa_esfuerzo_maxima: float) -> float:
+    return ingresos_mensuales * tasa_esfuerzo_maxima
+
+
+def entrada_minima_hipoteca(precio_compra: float, gastos_compra: float, ltv_maximo: float) -> float:
+    return precio_compra * (1 - ltv_maximo) + gastos_compra
+
+
+def rentabilidad_capital_propio(
+    cash_flow_anual: float, revalorizacion_anual: float, capital_propio: float
+) -> float:
+    return (cash_flow_anual + revalorizacion_anual) / capital_propio
+
+
+def beneficio_neto_flipping(
+    precio_compra: float,
+    coste_reforma: float,
+    precio_venta: float,
+    gastos_compra: float,
+    gastos_venta: float,
+) -> float:
+    return precio_venta - precio_compra - coste_reforma - gastos_compra - gastos_venta
+
+
+def rentabilidad_anualizada_flipping(beneficio_neto: float, capital_invertido: float, meses: float) -> float:
+    valor_final = capital_invertido + beneficio_neto
+    return cagr(capital_invertido, valor_final, meses / 12)
